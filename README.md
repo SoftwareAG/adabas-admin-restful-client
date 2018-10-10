@@ -52,10 +52,12 @@ This option can be used to reference the REST server location. It is possible to
 
 If the certificate is for internal use without public certification, you may switch off validation using the `-ignoreTLS` switch.
 
-With `-dbid` and `-fnr` you may define corresponding database parameter.
+## List Adabas databases
+
+This will list all available databases on the remote server.
 
 ```sh
-client -url <host>:<port> -dbid <dbid> list
+client -url <host>:<port> list
 ```
 
 Example out would be like this
@@ -79,6 +81,62 @@ Enter Password:
 
 
 2018/10/10 12:40:57 Adabas Administration RESTful client took 61.262267ms terminated
+```
+
+## Adabas database information
+
+With `-dbid` and `-fnr` you may define corresponding database parameter.
+
+```sh
+client -url <host>:<port> -dbid <dbid> -fnr <fnr> file
+```
+
+Example out would be like this
+
+```sh
+2018/10/10 12:59:12 Adabas Administration RESTful client started
+
+2018/10/10 12:59:12 Server: linhost:8390
+2018/10/10 12:59:12 User:   admin
+
+Enter Password: 
+
+Database 195 file 011:
+
+Name                : EMPLOYEES-NAT
+Number              : 11
+Last modification   : 2014-Jul-15 15:46:10:000 UTC
+Flags               : ISN_REUSAGE,SPACE_REUSAGE
+ISN count           : 1,107
+Top ISN             : 1,108
+Maximum ISN         : 73,727
+Max.MU Occurence    : 0
+Padding factor ASSO : 5
+Padding factor DATA : 5
+Max.record length   : 32,764
+Structure level     : 4
+Root file           : 0
+Lob file            : 0
+Record count        : 1,107
+Security info       : 0
+AC extents
+ - First RABN   : 2,574
+   Last RABN    : 2,582
+   Free or Isn  : 0
+DS extents
+ - First RABN   : 267
+   Last RABN    : 298
+   Free or Isn  : 275
+NI extents
+ - First RABN   : 229
+   Last RABN    : 318
+   Free or Isn  : 255
+UI extents
+ - First RABN   : 319
+   Last RABN    : 333
+   Free or Isn  : 332
+
+2018/10/10 12:59:14 Adabas Administration RESTful client took 102.136227ms terminated
 ```
 
 ## Parameter usage example
