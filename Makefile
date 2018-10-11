@@ -103,7 +103,7 @@ GODEP = $(BIN)/dep
 $(BIN)/dep: REPOSITORY=github.com/golang/dep/cmd/dep
 
 GOLINT = $(BIN)/golint
-$(BIN)/golint: REPOSITORY=github.com/golang/lint/golint
+$(BIN)/golint: REPOSITORY=golang.org/x/lint/golint
 
 GOCOVMERGE = $(BIN)/gocovmerge
 $(BIN)/gocovmerge: REPOSITORY=github.com/wadey/gocovmerge
@@ -233,7 +233,7 @@ checkstyle:
 
 $(BASE)/vendor: vendor-install
 
-generatemodels: $(CURDIR)/swagger/aif-swagger.yaml ; $(info $(M) generate models …) @ ## Run golint
+generatemodels: $(CURDIR)/swagger/aif-swagger.yaml ; $(info $(M) generate models …) @ ## Run generate models
 	if [ ! -d $(BASESRC)/models ]; then \
 	  GOPATH=$(GOPATH) go get -u github.com/go-swagger/go-swagger/cmd/swagger; \
 	    if [ -r ../AdminRestServer/swagger/aif-swagger.yaml ]; then \
