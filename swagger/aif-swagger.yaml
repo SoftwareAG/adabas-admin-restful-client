@@ -1,7 +1,7 @@
 swagger: '2.0'
 info:
   description: Adabas Administration
-  version: 6.7.0.0.20092018
+  version: 6.7.0.0.06112018
   title: Adabas Administration
   contact:
     name: Software AG Support
@@ -324,6 +324,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with database GCB'
@@ -414,6 +415,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with database user queue entries'
@@ -429,7 +431,7 @@ paths:
     get:
       tags:
         - Online
-      description: Stop the User Queue element
+      description: Provide User queue details of an specific user queue element
       operationId: getUserQueueDetail
       security:
         - BasicAuth: []
@@ -444,13 +446,14 @@ paths:
           description: User Queue ID
           required: true
           type: number
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, a User queue is stopped'
+          description: 'Successful response, a User queue detailed are received'
           schema:
             $ref: '#/definitions/UserQueueDetail'
         '400':
-          description: Error stopping the database user queue entry
+          description: Error finding user queue entry
           schema:
             $ref: '#/definitions/Error'
         '401':
@@ -496,6 +499,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with database command queue entries'
@@ -519,6 +523,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with database hold queue entries'
@@ -834,6 +839,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with Adabas High Water Mark statistics'
@@ -1038,6 +1044,7 @@ paths:
           description: Used for operation renumber
           required: false
           type: number
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with a FCB representation of the Adabas FCB'
@@ -1180,6 +1187,7 @@ paths:
             refresh renumber
           required: true
           type: number
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with a FCB representation of the Adabas FCB'
@@ -1259,6 +1267,7 @@ paths:
         - application/json
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with a list of UCB entries'
@@ -1435,6 +1444,36 @@ paths:
           description: Authorization error
         '404':
           description: Error creating Adabas database
+    delete:
+      tags:
+        - Scheduler
+      description: Delete a job definition
+      operationId: deleteJob
+      security:
+        - BasicAuth: []
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - name: jobName
+          in: path
+          description: Job Name to be requested
+          required: true
+          type: string
+      responses:
+        '200':
+          description: 'Successfully delete the job.'
+          schema:
+            $ref:  '#/definitions/JobStatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Job not available/unknown
   '/scheduler/job/{jobName}/full':
     get:
       tags:
@@ -1484,6 +1523,7 @@ paths:
           description: Job name to be requested
           required: true
           type: string
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with list of known databases.'
@@ -1559,7 +1599,7 @@ paths:
         '200':
           description: 'Successful response, job result is deleted.'
           schema:
-            $ref: '#/definitions/StatusResponse'
+            $ref:  '#/definitions/JobStatusResponse'
         '400':
           description: Environment evaluation error
           schema:
@@ -1625,7 +1665,7 @@ paths:
     get:
       tags:
         - Browser
-      description: Retrieves a list of databases known by Adabas Interface.
+      description: Download a file out of file location
       operationId: downloadFile
       security:
         - BasicAuth: []
@@ -1680,10 +1720,15 @@ paths:
       security:
         - BasicAuth: []
       consumes:
-        - application/octet-stream
+        - multipart/form-data
       parameters:
         - $ref: '#/parameters/locationParam'
         - $ref: '#/parameters/fileReferenceParam'
+        - name: uploadFile
+          in: formData
+          description: Upload file
+          required: true
+          type: file
       responses:
         '200':
           description: 'Successful response, with download binary file.'
@@ -1747,6 +1792,12 @@ parameters:
     description: File number
     required: true
     type: number
+  rfc3339Param:
+    name: rfc3339
+    in: query
+    description: Return time format in RFC3339
+    required: false
+    type: boolean
 definitions:
   Environments:
     type: object
@@ -2053,6 +2104,7 @@ definitions:
             type: integer
           Date:
             type: string
+            format: date-time
           Name:
             type: string
           Dbid:
@@ -2103,8 +2155,10 @@ definitions:
             type: integer
           TimeStampReplication:
             type: string
+            format: date-time
           TimeStampLog:
             type: string
+            format: date-time
   WORKExtents:
     type: object
     properties:
@@ -2162,10 +2216,13 @@ definitions:
               $ref: '#/definitions/UserQueueEntry'
       StartSession:
         type: string
+        format: date-time
       StartTransaction:
         type: string
+        format: date-time
       LastActivity:
         type: string
+        format: date-time
       TTLimit:
         type: integer
       TNALimit:
@@ -2208,6 +2265,7 @@ definitions:
         type: string
       Timestamp:
         type: string
+        format: date-time
   CommandQueue:
     type: object
     properties:
@@ -2246,7 +2304,7 @@ definitions:
   HoldQueue:
     type: object
     properties:
-      HoldQueueEntry:
+      HoldQueue:
         type: array
         items:
           $ref: '#/definitions/HoldQueueEntry'
@@ -2256,7 +2314,9 @@ definitions:
       User:
         type: string
       Hid:
-        $ref: '#/definitions/UserInformation'
+        type: array
+        items:
+           $ref: '#/definitions/UserInformation'
       HqCommid:
         type: integer
       File:
@@ -2644,6 +2704,7 @@ definitions:
             $ref: '#/definitions/HighWaterEntries'
           NucleusStartTime:
             type: string
+            format: date-time
   HighWaterEntries:
     type: object
     properties:
@@ -2655,6 +2716,7 @@ definitions:
         x-isnullable: false
       time:
         type: string
+        format: date-time
         x-isnullable: false
     required:
       - inuse
@@ -2769,6 +2831,7 @@ definitions:
         properties:
           Time:
             type: string
+            format: date-time
           Fields:
             type: array
             items:
@@ -2877,10 +2940,13 @@ definitions:
         type: string
       Utility:
         type: string
-      Parameter:
+      Parameters:
         type: array
         items:
-          type: string
+          type: object
+          properties:
+            Parameter:
+              type: string
       Environment:
         type: array
         items:
@@ -2908,8 +2974,10 @@ definitions:
             type: string
           Scheduled:
             type: string
+            format: date-time
           Ended:
             type: string
+            format: date-time
           Status:
             type: string
           StartedBy:
@@ -2997,11 +3065,13 @@ definitions:
       Name:
         type: string
       Size:
-        type: string
+        type: integer
       Created:
         type: string
+        format: data-time
       Modified:
         type: string
+        format: date-time
       Type:
         type: string
   Executions:
@@ -3013,8 +3083,10 @@ definitions:
         type: integer
       Scheduled:
         type: string
+        format: date-time
       Ended:
         type: string
+        format: date-time
       Log:
         type: string
       ExitCode:
@@ -3036,6 +3108,7 @@ definitions:
     properties:
       Date:
         type: string
+        format: date-time
       Sequence:
         type: integer
       Id:
