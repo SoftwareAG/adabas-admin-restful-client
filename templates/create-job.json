@@ -1,0 +1,1 @@
+{"Job":{"User":"RTK","Name":"goadmintest","Description":"GO Administration test creating job","Utility":"ADAOPR","Scripts":"","Parameters":[{"Parameter":"db=24"},  {"Parameter":"disp=cq"}],"Environments":[],"CronScheduler":"(null)"}}
