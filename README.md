@@ -1,5 +1,4 @@
-Adabas RESTful administration client
-====================================
+# Adabas RESTful administration client
 
 This code contains a sample use case of Adabas RESTful administration.
 The Swagger definition delivered in the Adabas RESTful administration server can be used to
@@ -12,7 +11,7 @@ This example can be generated using GO 1.8 or higher.
 
 The result is a command line access to the Adabas RESTful administration.
 
-# Build
+## Build
 
 The build process needs an installed GO (golang) compiler. The build works on Linux. Any it is possible to build Windows version using the `GOOS=windows` parameter. The build-infrastructure of GO requires web access to download required dependencies.
 
@@ -43,7 +42,7 @@ make GOOS=windows
 
 The final platform is independent to the platform Adabas is working.
 
-# Runtime
+## Runtime
 
 Beside the direct usage of the client you might use the `startAdmin.sh` script for a quick start.  In this case it might be necessary to import dependent packages using the `go get <package>` command. The `startAdmin.sh` script provides all help descriptions entering the  `help` command.
 
