@@ -67,7 +67,7 @@ Example out would be like this
 2018/10/10 12:40:54 Server: linhost:8390
 2018/10/10 12:40:54 User:   admin
 
-Enter Password: 
+Enter Password:
  Dbid   Name                  Active    Version
 
   001 [TestDatabase    ]      false    Adabas v6.6 (20)
@@ -98,7 +98,7 @@ Example out would be like this
 2018/10/10 12:59:12 Server: linhost:8390
 2018/10/10 12:59:12 User:   admin
 
-Enter Password: 
+Enter Password:
 
 Database 195 file 011:
 
@@ -158,7 +158,11 @@ To create a new Adabas database, use a input file with the JSON definition of th
 ```JSON
 {
     "CheckpointFile":1,
-    "ContainerList":[        {"BlockSize":"8K","ContainerSize":"20M","Path":"${ADADATADIR/db075/ASSO1.075"}, {"BlockSize":"32K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/ASSO2.075"},        {"BlockSize":"32K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/DATA1.075"},{"BlockSize":"16K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/WORK.075"}
+    "ContainerList":[
+        {"BlockSize":"8K","ContainerSize":"20M","Path":"${ADADATADIR/db075/ASSO1.075"}, 
+        {"BlockSize":"32K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/ASSO2.075"},
+        {"BlockSize":"32K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/DATA1.075"},
+        {"BlockSize":"16K","ContainerSize":"20M","Path":"${ADADATADIR}/db075/WORK.075"}
     ],
     "Dbid":75,
     "LoadDemo":true,
@@ -187,7 +191,6 @@ To create a new Adabas file, use a input file with the JSON definition of the ne
 
 The corresponding JSON file need to be referenced using the `-input` option.
 ______________________
-These tools are provided as-is and without warranty or support. They do not constitute part of the Software AG product suite. Users are free to use, fork and modify them, subject to the license agreement. While Software AG welcomes contributions, we cannot guarantee to include every contribution in the master project.	
+These tools are provided as-is and without warranty or support. They do not constitute part of the Software AG product suite. Users are free to use, fork and modify them, subject to the license agreement. While Software AG welcomes contributions, we cannot guarantee to include every contribution in the master project.
 
 Contact us at [TECHcommunity](mailto:technologycommunity@softwareag.com?subject=Github/SoftwareAG) if you have any questions.
-
