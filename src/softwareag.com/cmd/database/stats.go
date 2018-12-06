@@ -30,8 +30,10 @@ import (
 )
 
 // Highwater High water statistics
-func Highwater(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func Highwater(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseHighWaterParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.Online.GetDatabaseHighWater(params, auth)
 	if err != nil {
@@ -42,7 +44,7 @@ func Highwater(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -100,16 +102,23 @@ func Highwater(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 	p.Printf("%-18s  %10d   %10d   %10d   %02d  %s\n", "Transaction Commit", resp.Payload.HighWater.TransactionTimeSize,
 		resp.Payload.HighWater.TransactionTimeHighWaterMark.Inuse, resp.Payload.HighWater.TransactionTimeHighWaterMark.High, 0,
 		resp.Payload.HighWater.TransactionTimeHighWaterMark.Time)
+	return nil
 }
 
 // CommandStats command statistics
-func CommandStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func CommandStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseCommandStatsParams()
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.Online.GetDatabaseCommandStats(params, auth)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		switch err.(type) {
+		case *online.GetDatabaseCommandStatsBadRequest:
+			response := err.(*online.GetDatabaseCommandStatsBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
 	}
 
 	fmt.Println()
@@ -121,16 +130,23 @@ func CommandStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Cli
 		fmt.Printf(" %3s  %8d\t\t", c.CommandName, c.CommandCount)
 	}
 	fmt.Println()
+	return nil
 }
 
 // BufferpoolStats buffer pool statistics
-func BufferpoolStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func BufferpoolStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseBPStatsParams()
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.Online.GetDatabaseBPStats(params, auth)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		switch err.(type) {
+		case *online.GetDatabaseBPStatsBadRequest:
+			response := err.(*online.GetDatabaseBPStatsBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -165,4 +181,5 @@ func BufferpoolStats(clientInstance *client.AdabasAdmin, dbid int, auth runtime.
 	//fmt.Printf("                                        Limit Temp.B.( 50%%): %12d\n", 0)
 	//fmt.Printf("                                        Modified T.B.(  0%%): %12d\n", 0)
 	fmt.Println()
+	return nil
 }

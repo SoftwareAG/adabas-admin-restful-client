@@ -32,8 +32,10 @@ import (
 )
 
 // Fields list fields of a Adabas file
-func Fields(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.ClientAuthInfoWriter) {
+func Fields(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.ClientAuthInfoWriter) error {
 	params := online_offline.NewGetFieldDefinitionTableParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	params.File = float64(fnr)
 	resp, err := clientInstance.OnlineOffline.GetFieldDefinitionTable(params, auth)
@@ -45,7 +47,7 @@ func Fields(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -79,10 +81,11 @@ func Fields(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.
 			printFields(p, f)
 		}
 	}
+	return nil
 }
 
 // AddFields add Adabas fields
-func AddFields(clientInstance *client.AdabasAdmin, dbid int, fnr int, fdt string, auth runtime.ClientAuthInfoWriter) {
+func AddFields(clientInstance *client.AdabasAdmin, dbid int, fnr int, fdt string, auth runtime.ClientAuthInfoWriter) error {
 	params := online_offline.NewModifyFieldDefinitionTableParams()
 	params.Dbid = float64(dbid)
 	params.File = float64(fnr)
@@ -97,11 +100,11 @@ func AddFields(clientInstance *client.AdabasAdmin, dbid int, fnr int, fdt string
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	fmt.Println("Status: ", resp.Payload.Status.Message)
-	return
+	return nil
 
 }
 

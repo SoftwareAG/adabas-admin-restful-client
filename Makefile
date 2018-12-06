@@ -233,7 +233,7 @@ checkstyle:
 
 $(BASE)/vendor: vendor-install
 
-generatemodels: $(CURDIR)/swagger/aif-swagger.yaml ; $(info $(M) generate models …) @ ## Run generate models
+generatemodels: $(CURDIR)/swagger/aif-swagger.yaml ; $(info $(M) generate models …) @ ## Generate model
 	if [ ! -d $(BASESRC)/models ]; then \
 	  GOPATH=$(GOPATH) go get -u github.com/go-swagger/go-swagger/cmd/swagger; \
 	    if [ -r ../AdminRestServer/swagger/aif-swagger.yaml ]; then \
@@ -247,5 +247,5 @@ cleanModels: ; $(info $(M) cleaning models…)	@ ## Cleanup vendor
 	@rm -rf $(BASESRC)/models
 	@rm -rf $(BASESRC)/client
 
-generate: cleanModels $(BASESRC)/models
+generate: cleanModels generatemodels  # $(BASESRC)/models
 

@@ -1,0 +1,1 @@
+{"Job":{"User":"RTK","Name":"goadminbackup","Description":"GO Administration test creating job","Utility":"ADABCK","Scripts":"","Parameters":[{"Parameter":"db=24"},  {"Parameter":"dump=*"}],"Environments":[],"CronScheduler":"(null)"}}

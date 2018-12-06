@@ -63,7 +63,7 @@ func (il *InputList) Set(v string) error {
 }
 
 // Files list database files
-func Files(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func Files(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online_offline.NewGetDatabaseFilesParams()
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.OnlineOffline.GetDatabaseFiles(params, auth)
@@ -75,7 +75,7 @@ func Files(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuth
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -94,17 +94,18 @@ func Files(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuth
 		}
 		p.Printf(" %03d  %-20s %10d %s\n", f.FileNr, f.Name, f.RecordCount, s)
 	}
+	return nil
 }
 
 // File get file information
-func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, auth runtime.ClientAuthInfoWriter) {
+func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, auth runtime.ClientAuthInfoWriter) error {
 	if dbid < 1 {
 		fmt.Println("Please add option -dbid Adabas database id")
-		return
+		return fmt.Errorf("Please add option -dbid Adabas database id")
 	}
 	if fnr < 1 {
 		fmt.Println("Please add option -fnr Adabas file number")
-		return
+		return fmt.Errorf("Please add option -fnr Adabas file number")
 	}
 	if para != "" {
 		params := online.NewPutAdabasFileParameterParams()
@@ -121,7 +122,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 				b, err := strconv.ParseBool(p[1])
 				if err != nil {
 					fmt.Println("PGM refresh parameter invalid: ", p[1])
-					return
+					return err
 				}
 				pgm = b
 				params.Pgmrefresh = &pgm
@@ -129,7 +130,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 				b, err := strconv.ParseBool(p[1])
 				if err != nil {
 					fmt.Println("ISN reusage parameter invalid: ", p[1])
-					return
+					return err
 				}
 				ir = b
 				params.Isnreusage = &ir
@@ -137,13 +138,13 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 				b, err := strconv.ParseBool(p[1])
 				if err != nil {
 					fmt.Println("Space reusage parameter invalid: ", p[1])
-					return
+					return err
 				}
 				sr = b
 				params.Spacereusage = &sr
 			default:
 				fmt.Println("Unknown parameter:", p[0])
-				return
+				return fmt.Errorf("Unkown Parameter %s", p[0])
 			}
 		}
 
@@ -158,12 +159,14 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 			default:
 				fmt.Println("Error:", errp)
 			}
-			return
+			return errp
 		}
 		fmt.Println("Status: ", resp.Payload.Status.Message)
-		return
+		return nil
 	}
 	params := online_offline.NewGetDatabaseFileParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	params.FileOperation = strconv.Itoa(fnr)
 	resp, err := clientInstance.OnlineOffline.GetDatabaseFile(params, auth)
@@ -175,7 +178,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -222,10 +225,11 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 		p.Printf("   Last RABN    : %d\n", e.LastRabn)
 		p.Printf("   Free or Isn  : %d\n", e.FreeOrIsn)
 	}
+	return nil
 }
 
 // RenameFile rename database file
-func RenameFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newName string, auth runtime.ClientAuthInfoWriter) {
+func RenameFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newName string, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewPutAdabasFileParameterParams()
 	params.Dbid = float64(dbid)
 	params.Name = &newName
@@ -239,19 +243,20 @@ func RenameFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newName s
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 	fmt.Println("Status: ", resp.Payload.Status.Message)
+	return nil
 }
 
 // RenumberFile renumber database file
-func RenumberFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newNumber string, auth runtime.ClientAuthInfoWriter) {
+func RenumberFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newNumber string, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewPutAdabasFileParameterParams()
 	params.Dbid = float64(dbid)
 	number, err := strconv.Atoi(newNumber)
 	if err != nil {
 		fmt.Println("Error:", err)
-		return
+		return err
 	}
 	flNumber := float64(number)
 	params.Number = &flNumber
@@ -265,9 +270,10 @@ func RenumberFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newNumb
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 	fmt.Println("Status: ", resp.Payload.Status.Message)
+	return nil
 }
 
 func loadFdt(fdt string) string {
@@ -340,16 +346,16 @@ func createFileInstance(dbid int, fnr int, input InputList) *models.FduFdt {
 }
 
 // CreateFile create database file
-func CreateFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, input InputList, auth runtime.ClientAuthInfoWriter) {
+func CreateFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, input InputList, auth runtime.ClientAuthInfoWriter) error {
 	if len(input) == 0 {
 		fmt.Println("Please add -input parameter for FDU and FDT")
-		return
+		return fmt.Errorf("Please add -input parameter for FDU and FDT")
 	}
 	params := online.NewCreateAdabasFileParams()
 	params.Dbid = float64(dbid)
 	params.Fdufdt = createFileInstance(dbid, fnr, input)
 	if params.Fdufdt == nil {
-		return
+		return fmt.Errorf("Error parsing file")
 	}
 	resp, err := clientInstance.Online.CreateAdabasFile(params, auth)
 	if err != nil {
@@ -360,13 +366,14 @@ func CreateFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, input Inp
 		default:
 			fmt.Println("Error:", err, reflect.TypeOf(err))
 		}
-		return
+		return err
 	}
 	fmt.Println("Status: ", resp.Payload.Status.Message)
+	return nil
 }
 
 // DeleteFile delete database file
-func DeleteFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.ClientAuthInfoWriter) {
+func DeleteFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.ClientAuthInfoWriter) error {
 	params := online_offline.NewDeleteFileParams()
 	params.Dbid = float64(dbid)
 	params.FileOperation = float64(fnr)
@@ -379,7 +386,7 @@ func DeleteFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runt
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	p := message.NewPrinter(language.English)
@@ -387,4 +394,5 @@ func DeleteFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runt
 	p.Println()
 	p.Printf(" Adabas status deleting file: %s", resp.Payload.Status.Message)
 	p.Println()
+	return nil
 }

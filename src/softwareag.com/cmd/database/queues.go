@@ -28,9 +28,12 @@ import (
 )
 
 // UserQueue display all user queue entries
-func UserQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func UserQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseUserQueueParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
+
 	resp, err := clientInstance.Online.GetDatabaseUserQueue(params, auth)
 	if err != nil {
 		switch err.(type) {
@@ -40,7 +43,7 @@ func UserQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 	userQueue := resp.Payload.UserQueue
 
@@ -52,11 +55,14 @@ func UserQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 		fmt.Printf(" %3d %10d %-8s %-8s %-8s %-8s %-8s %-8s\n", u.UqID, u.UID.ID, u.UID.Node, u.UID.Terminal,
 			u.UID.Timestamp, u.User, u.Flags, u.EtFlags)
 	}
+	return nil
 }
 
 // CommandQueue display all command queue entries
-func CommandQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func CommandQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseCommandQueueParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.Online.GetDatabaseCommandQueue(params, auth)
 	if err != nil {
@@ -67,7 +73,7 @@ func CommandQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Cli
 		default:
 			fmt.Println("Error:", err)
 		}
-		return
+		return err
 	}
 
 	fmt.Println()
@@ -77,23 +83,33 @@ func CommandQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Cli
 	for _, c := range resp.Payload.CommandQueue.Commands {
 		fmt.Printf(" %3d  %-8s  %-8s  %-10d  %-3s  %-8d  %-s\n", c.CommID, c.User.Node, c.User.Terminal, c.User.ID, c.CommandCode, c.File, c.Flags)
 	}
+	return nil
 }
 
 // HoldQueue display all hold queue entries
-func HoldQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) {
+func HoldQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAuthInfoWriter) error {
 	params := online.NewGetDatabaseHoldQueueParams()
+	rfc3339 := true
+	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	resp, err := clientInstance.Online.GetDatabaseHoldQueue(params, auth)
 	if err != nil {
-		fmt.Println("Error:", err)
-		return
+		switch err.(type) {
+		case *online.GetDatabaseHoldQueueBadRequest:
+			response := err.(*online.GetDatabaseHoldQueueBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
 	}
 
 	fmt.Println()
 	fmt.Println(" Hold queue entries:")
 	fmt.Println()
 	fmt.Printf("   Id Node Id   Login Id     ES Id     User Id  File           ISN Locks  Flg\n")
-	for _, c := range resp.Payload.HoldQueueEntry {
-		fmt.Printf(" %3d  %-8s  %-8s     %3d  %3s  %d  %s %s\n", c.HqCommid, c.Hid.Node, c.Hid.Terminal, c.Hid.ID, c.User, c.File, c.Locks, c.Flags)
+	for _, c := range resp.Payload.HoldQueue {
+		fmt.Printf(" %3d  %-8s  %-8s     %3d  %3s  %d  %s %s\n", c.HqCommid, c.Hid[0].Node, c.Hid[0].Terminal, c.Hid[0].ID, c.User, c.File, c.Locks, c.Flags)
 	}
+	return nil
 }
