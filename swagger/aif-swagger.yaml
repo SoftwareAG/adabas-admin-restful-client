@@ -676,6 +676,9 @@ paths:
         - name: ADATCPRECEIVER
           in: query
           type: integer
+        - name: ADATCPCONNECTIONS
+          in: query
+          type: integer
         - name: type
           in: query
           description: Type of parameter static or dynamic
@@ -2430,6 +2433,9 @@ definitions:
             type: integer
             x-isnullable: false
           ADATCPATB:
+            type: integer
+            x-isnullable: false
+          ADATCPCONNECTIONS:
             type: integer
             x-isnullable: false
         required:
