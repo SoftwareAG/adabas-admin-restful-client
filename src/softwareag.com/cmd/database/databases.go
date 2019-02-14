@@ -176,7 +176,9 @@ func Status(clientInstance *client.AdabasAdmin, dbid int, auth runtime.ClientAut
 func Create(clientInstance *client.AdabasAdmin, dbid int, input string, auth runtime.ClientAuthInfoWriter) error {
 	params := offline.NewPostAdabasDatabaseParams()
 	params.Database = createDatabaseInstance(dbid, input)
-	params.Database.Dbid = int64(dbid)
+	if dbid > 0 {
+		params.Database.Dbid = int64(dbid)
+	}
 	resp, err := clientInstance.Offline.PostAdabasDatabase(params, auth)
 	if err != nil {
 		switch err.(type) {
@@ -572,7 +574,8 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 					if f.IsNil() && f.CanSet() {
 						switch v[0] {
 						case "NT", "TT", "NU", "NCL", "NISNHQ", "TNAE", "TNAA", "TNAX", "LAB", "LABX", "LBP",
-							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "APUUNITS", "APURECVS", "APUWORKERS",
+							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "ADATCPCONNECTIONS",
+							"APUUNITS", "APURECVS", "APUWORKERS",
 							"RPLBLOCKS", "RPLTOTAL", "RPLRECORDS", "WRITELIMIT":
 							i, err := strconv.Atoi(v[1])
 							if err != nil {
