@@ -676,6 +676,9 @@ paths:
         - name: ADATCPRECEIVER
           in: query
           type: integer
+        - name: ADATCPCONNECTIONS
+          in: query
+          type: integer
         - name: type
           in: query
           description: Type of parameter static or dynamic
@@ -1097,6 +1100,11 @@ paths:
         - name: isnreusage
           in: query
           description: Set ISN resage
+          required: false
+          type: boolean
+        - name: spannedrecords
+          in: query
+          description: Enable/Disable file option for spanned records, need to be given exclusive
           required: false
           type: boolean
       responses:
@@ -2430,6 +2438,9 @@ definitions:
             type: integer
             x-isnullable: false
           ADATCPATB:
+            type: integer
+            x-isnullable: false
+          ADATCPCONNECTIONS:
             type: integer
             x-isnullable: false
         required:
