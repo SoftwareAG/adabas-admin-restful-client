@@ -1102,6 +1102,11 @@ paths:
           description: Set ISN resage
           required: false
           type: boolean
+        - name: spannedrecords
+          in: query
+          description: Enable/Disable file option for spanned records, need to be given exclusive
+          required: false
+          type: boolean
       responses:
         '200':
           description: 'Successful response, with new Adabas file created'
