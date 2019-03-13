@@ -177,6 +177,7 @@ fmt: ; $(info $(M) running gofmt…) @ ## Run gofmt on all source files
 
 # Dependency management
 
+.PHONY: vendor
 vendor: Gopkg.toml Gopkg.lock | $(BASE) $(GODEP) ; $(info $(M) retrieving dependencies…)
 	$Q cd $(BASE) && GOPATH=$(GOPATH):$(ADAPATH) $(GODEP) ensure -v
 #	@ln -nsf . vendor/src
@@ -201,8 +202,6 @@ else
 	$(info $(M) updating all dependencies…)
 	$Q cd $(BASE) && $(GODEP) ensure -update
 endif
-	@ln -nsf . vendor/src
-	@touch vendor
 
 # Misc
 
