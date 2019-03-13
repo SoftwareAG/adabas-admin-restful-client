@@ -55,6 +55,8 @@ If the certificate is for internal use without public certification, you may swi
 
 This will list all available databases on the remote server.
 
+![Image of usage](images/demo.gif)
+
 ```sh
 client -url <host>:<port> list
 ```
