@@ -3041,12 +3041,11 @@ definitions:
     type: object
     properties:
       Directories:
-        type: object
-        properties:
-          Directory:
-            type: array
-            items:
-              $ref: '#/definitions/Directory'
+        type: array
+        items:
+          $ref: '#/definitions/Directory'
+      system:
+        type: string
   Directory:
     type: object
     properties:

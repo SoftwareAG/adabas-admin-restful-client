@@ -61,7 +61,7 @@ This will list all available databases on the remote server.
 client -url <host>:<port> list
 ```
 
-Example out would be like this
+Example output would be like this
 
 ```sh
 2018/10/10 12:40:54 Adabas Administration RESTful client started
@@ -92,7 +92,7 @@ With `-dbid` and `-fnr` you may define corresponding database parameter.
 client -url <host>:<port> -dbid <dbid> -fnr <fnr> file
 ```
 
-Example out would be like this
+Example output would be like this
 
 ```sh
 2018/10/10 12:59:12 Adabas Administration RESTful client started
