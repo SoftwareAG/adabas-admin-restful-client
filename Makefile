@@ -16,26 +16,27 @@
 #   limitations under the License.
 #
 
-GOARCH   ?= $(shell $(GO) env GOARCH)
-GOOS     ?= $(shell $(GO) env GOOS)
-PACKAGE  = softwareag.com
-DATE    ?= $(shell date +%FT%T%z)
-VERSION ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
+GOARCH    ?= $(shell $(GO) env GOARCH)
+GOOS      ?= $(shell $(GO) env GOOS)
+PACKAGE    = softwareag.com
+DATE      ?= $(shell date +%FT%T%z)
+VERSION   ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
-GOPATH   = $(CURDIR)/tmp_gopath~
-ADAPATH  = $(CURDIR)/../AdabasAccess
-BIN      = $(CURDIR)/bin
-LOGPATH  = $(CURDIR)/logs
+TMPPATH    ?= /tmp
+GOPATH      = $(TMPPATH)/tmp_adabas-go-client.$(shell id -u)
+ADAPATH    = $(CURDIR)/../AdabasAccess
+BIN        = $(CURDIR)/bin
+LOGPATH    = $(CURDIR)/logs
 CURLOGPATH = $(CURDIR)/logs
-NETWORK  ?= localhost:50001
+NETWORK   ?= localhost:50001
 TESTOUTPUT = $(CURDIR)/test
-EXECS    = cmd/client
-LIBS     = slib/adaapi
-BASESRC  = $(CURDIR)/src/$(PACKAGE)
-BASE     = $(GOPATH)/src/$(PACKAGE)
-PKGS     = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH):$(ADAPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
-TESTPKGS = $(shell env GOPATH=$(GOPATH):$(ADAPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
-GO_FLAGS = $(if $(debug),"-x",)
+EXECS      = cmd/client
+LIBS       = slib/adaapi
+BASESRC    = $(CURDIR)/src/$(PACKAGE)
+BASE       = $(GOPATH)/src/$(PACKAGE)
+PKGS       = $(or $(PKG),$(shell cd $(BASE) && env GOPATH=$(GOPATH):$(ADAPATH) $(GO) list ./... | grep -v "^$(PACKAGE)/vendor/"))
+TESTPKGS   = $(shell env GOPATH=$(GOPATH):$(ADAPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
+GO_FLAGS   = $(if $(debug),"-x",)
 
 export GOPATH
 
@@ -236,8 +237,8 @@ $(BASE)/vendor: vendor-install
 generatemodels: $(CURDIR)/swagger/aif-swagger.yaml ; $(info $(M) generate models …) @ ## Generate model
 	if [ ! -d $(BASESRC)/models ]; then \
 	  GOPATH=$(GOPATH) go get -u github.com/go-swagger/go-swagger/cmd/swagger; \
-	    if [ -r ../AdminRestServer/swagger/aif-swagger.yaml ]; then \
-	     grep -v application/xml ../AdminRestServer/swagger/aif-swagger.yaml >$(CURDIR)/swagger/aif-swagger.yaml; \
+	    if [ -r ../AdabasRestServer/swagger/swagger.yaml ]; then \
+	     grep -v application/xml ../AdabasRestServer/swagger/swagger.yaml >$(CURDIR)/swagger/aif-swagger.yaml; \
 	    fi; \
 	  GOPATH=$(GOPATH) $(GOPATH)/bin/swagger generate client -A AdabasAdmin -f $(CURDIR)/swagger/aif-swagger.yaml \
 	 -t $(BASE) -r copyright; \

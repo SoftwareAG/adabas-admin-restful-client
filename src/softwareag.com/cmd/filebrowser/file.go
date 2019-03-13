@@ -46,7 +46,7 @@ func Locations(clientInstance *client.AdabasAdmin, auth runtime.ClientAuthInfoWr
 	fmt.Println()
 	fmt.Printf(" Name                              | Location\n")
 	fmt.Printf("-----------------------------------|----------------------------------------\n")
-	for _, d := range resp.Payload.Directories.Directory {
+	for _, d := range resp.Payload.Directories {
 		fmt.Printf(" %-33s | %s\n", d.Name, d.Location)
 	}
 	return nil
