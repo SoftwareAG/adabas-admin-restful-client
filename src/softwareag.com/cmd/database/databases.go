@@ -110,16 +110,16 @@ func createDatabaseInstance(dbid int, input string) *models.Database {
 		database.Name = "DEMODB"
 		database.LoadDemo = true
 		database.Dbid = int64(dbid)
-		container := &models.Container{BlockSize: "8K", ContainerSize: "20M",
+		container := &models.Container{BlockSize: "8K", ContainerSize: "60M",
 			Path: fmt.Sprintf("${ADADATADIR}/db%03d/ASSO1.%03d", dbid, dbid)}
 		database.ContainerList = append(database.ContainerList, container)
 		container = &models.Container{BlockSize: "32K", ContainerSize: "20M",
 			Path: fmt.Sprintf("${ADADATADIR}/db%03d/ASSO2.%03d", dbid, dbid)}
 		database.ContainerList = append(database.ContainerList, container)
-		container = &models.Container{BlockSize: "32K", ContainerSize: "20M",
+		container = &models.Container{BlockSize: "32K", ContainerSize: "100M",
 			Path: fmt.Sprintf("${ADADATADIR}/db%03d/DATA1.%03d", dbid, dbid)}
 		database.ContainerList = append(database.ContainerList, container)
-		container = &models.Container{BlockSize: "16K", ContainerSize: "20M",
+		container = &models.Container{BlockSize: "4K", ContainerSize: "20M",
 			Path: fmt.Sprintf("${ADADATADIR}/db%03d/WORK.%03d", dbid, dbid)}
 		database.ContainerList = append(database.ContainerList, container)
 		database.CheckpointFile = 1
