@@ -56,12 +56,12 @@
   version = "v0.18.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:d4a14966fe8f1ec9306792aaa4d135392b04ab5eb5830d485199dbf0ddb1132b"
   name = "github.com/go-openapi/errors"
   packages = ["."]
   pruneopts = "UT"
   revision = "7a7ff1b7b8020f22574411a32f28b4d168d69237"
+  version = "v0.18.0"
 
 [[projects]]
   digest = "1:953a2628e4c5c72856b53f5470ed5e071c55eccf943d798d42908102af2a610f"
@@ -89,7 +89,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:ed4070947554435953d532a6e7ae0e25662fd7725eaef097d200f14705853249"
+  digest = "1:11d97b8ba87bd5e88777494790e1a134147ea98604351e66e2c44f747e939a7a"
   name = "github.com/go-openapi/runtime"
   packages = [
     ".",
@@ -102,7 +102,7 @@
     "security",
   ]
   pruneopts = "UT"
-  revision = "25a2b415dd47dbf71343b9da8e2be9c4a7d6f300"
+  revision = "109737172424d8a656fd1199e28c9f5cc89b0cca"
 
 [[projects]]
   digest = "1:08656ef9c5a45ddccb7f206ca2d67e12e9fcda4122a83dc0544b5c967267cefa"
@@ -121,20 +121,20 @@
   revision = "4d736b26696e845676d9bae899e6e97892c11f80"
 
 [[projects]]
-  branch = "master"
-  digest = "1:937e7dbdd1a44b6a295897142108b23001e76a2829968004ecba638ef9b3a88a"
+  digest = "1:0005186c6608dd542239ac8e4f4f1e2e7c24d493e999113c46b93332f0362fc0"
   name = "github.com/go-openapi/swag"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b3e2804c8535ee0d1b89320afd98474d5b8e9e3b"
+  revision = "1d29f06aebd59ccdf11ae04aa0334ded96e2d909"
+  version = "v0.18.0"
 
 [[projects]]
-  branch = "master"
   digest = "1:58541fddf3f4ec485710f1b346e7f647baf09a878a604e47e3668c600fe44076"
   name = "github.com/go-openapi/validate"
   packages = ["."]
   pruneopts = "UT"
   revision = "d2eab7d93009e9215fc85b2faa2c2f2a98c2af48"
+  version = "v0.18.0"
 
 [[projects]]
   branch = "master"
@@ -178,7 +178,7 @@
   name = "golang.org/x/crypto"
   packages = ["ssh/terminal"]
   pruneopts = "UT"
-  revision = "a1f597ede03a7bef967a422b5b3a5bd08805a01e"
+  revision = "b7391e95e576cacdcdd422573063bc057239113d"
 
 [[projects]]
   branch = "master"
@@ -186,18 +186,18 @@
   name = "golang.org/x/net"
   packages = ["idna"]
   pruneopts = "UT"
-  revision = "9f648a60d9775ef5c977e7669d1673a7a67bef33"
+  revision = "1272bf9dcd53ea65c09668fb4c76e65deb740072"
 
 [[projects]]
   branch = "master"
-  digest = "1:944736317d4f2fb1c1015ef9ca05fd9313b4e19f1128901cc678f636435fa9b0"
+  digest = "1:012ffea19e0c7f3bf69652ba71b42c8ffa9929ad53f8a1d50534b279cfd7a34f"
   name = "golang.org/x/sys"
   packages = [
     "unix",
     "windows",
   ]
   pruneopts = "UT"
-  revision = "fead79001313d15903fb4605b4a1b781532cd93e"
+  revision = "f7bb7a8bee54210937e93ec56d007d892c1f0580"
 
 [[projects]]
   digest = "1:37f225ac3d4d18d2a631a4050f74427dee3c7ba0469313eaf51ce9ab201eab28"
@@ -243,12 +243,9 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
-    "github.com/go-openapi/errors",
     "github.com/go-openapi/runtime",
     "github.com/go-openapi/runtime/client",
     "github.com/go-openapi/strfmt",
-    "github.com/go-openapi/swag",
-    "github.com/go-openapi/validate",
     "github.com/stretchr/testify/assert",
     "golang.org/x/crypto/ssh/terminal",
     "golang.org/x/text/language",
