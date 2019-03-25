@@ -1,4 +1,4 @@
-module softwareag.com/cmd
+module softwareag.com
 
 go 1.12
 
