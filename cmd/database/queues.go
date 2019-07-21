@@ -21,6 +21,7 @@ package database
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/go-openapi/runtime"
 	"softwareag.com/client"
@@ -55,6 +56,86 @@ func UserQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 		fmt.Printf(" %3d %10d %-8s %-8s %-8s %-8s %-8s %-8s\n", u.UqID, u.UID.ID, u.UID.Node, u.UID.Terminal,
 			u.UID.Timestamp, u.User, u.Flags, u.EtFlags)
 	}
+	return nil
+}
+
+// UserDetails retrieve user queue entry details
+func UserDetails(clientInstance *client.AdabasAdmin, dbid int, param string, auth runtime.ClientAuthInfoWriter) error {
+	params := online.NewGetUserQueueDetailParams()
+	params.Dbid = float64(dbid)
+	qid, qerr := strconv.Atoi(param)
+	if qerr != nil {
+		return qerr
+	}
+	params.Queueid = float64(qid)
+
+	resp, err := clientInstance.Online.GetUserQueueDetail(params, auth)
+	if err != nil {
+		switch err.(type) {
+		case *online.GetDatabaseCommandQueueBadRequest:
+			response := err.(*online.GetUserQueueDetailBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
+	}
+	fmt.Println()
+	userDetails := resp.Payload.UserQueueDetail.DetailEntry[0]
+	fmt.Printf(" Got user queue details of queue id %v:\n", userDetails.UqID)
+	fmt.Printf("%20s : %s\n", "User", userDetails.User)
+	fmt.Printf("%20s :\n", "Adabas ID")
+	fmt.Printf("%21s : %d\n", " ID", userDetails.UID.ID)
+	fmt.Printf("%21s : %s\n", " Node", userDetails.UID.Node)
+	fmt.Printf("%21s : %s\n", " Terminal", userDetails.UID.Terminal)
+	fmt.Printf("%21s : %s\n", " Timestamp", userDetails.UID.Timestamp)
+	fmt.Printf("%20s : %s\n", "Flags", userDetails.Flags)
+	fmt.Printf("%20s : %s\n", "ET Flags", userDetails.EtFlags)
+	fmt.Printf("%20s : %s\n", "Start session", resp.Payload.StartSession)
+	fmt.Printf("%20s : %s\n", "Start transaction", resp.Payload.StartTransaction)
+	fmt.Printf("%20s : %s\n", "Last activity", resp.Payload.LastActivity)
+	fmt.Printf("%20s : %d\n", "TT Limit", resp.Payload.TTLimit)
+	fmt.Printf("%20s : %d\n", "TNA Limit", resp.Payload.TNALimit)
+	fmt.Printf("%20s : %d\n", "ISN lists", resp.Payload.ISNLists)
+	fmt.Printf("%20s : %d\n", "ISN in hold", resp.Payload.ISNHold)
+	fmt.Printf("%20s :\n", "Files in use")
+	for f := range resp.Payload.Files {
+		if f > 0 {
+			fmt.Printf("%20s : %d\n", " ", f)
+		}
+	}
+	fmt.Printf("%20s : %d\n", "Command count:", resp.Payload.CommandCount)
+	fmt.Printf("%20s : %d\n", "Transaction count:", resp.Payload.TransactionCount)
+	fmt.Printf("%20s : %d\n", "User encoding:", resp.Payload.UserEncoding)
+	fmt.Println()
+	return nil
+}
+
+// DeleteUser stop user
+func DeleteUser(clientInstance *client.AdabasAdmin, dbid int, param string, auth runtime.ClientAuthInfoWriter) error {
+	params := online.NewStopUserQueueEntryParams()
+	params.Dbid = float64(dbid)
+	qid, qerr := strconv.Atoi(param)
+	if qerr != nil {
+		return qerr
+	}
+	params.Queueid = float64(qid)
+
+	resp, err := clientInstance.Online.StopUserQueueEntry(params, auth)
+	if err != nil {
+		switch err.(type) {
+		case *online.GetDatabaseCommandQueueBadRequest:
+			response := err.(*online.StopUserQueueEntryBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
+	}
+	fmt.Println()
+	fmt.Printf(" Stop of user %v in user queue initiated\n", params.Queueid)
+	fmt.Println()
+	fmt.Println(resp)
 	return nil
 }
 

@@ -220,7 +220,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 		p.Printf("   Free or Isn  : %d\n", e.FreeOrIsn)
 	}
 	p.Printf("UI extents\n")
-	for _, e := range resp.Payload.File.Uiextents {
+	for _, e := range resp.Payload.File.UIextents {
 		p.Printf(" - First RABN   : %d\n", e.FirstRabn)
 		p.Printf("   Last RABN    : %d\n", e.LastRabn)
 		p.Printf("   Free or Isn  : %d\n", e.FreeOrIsn)

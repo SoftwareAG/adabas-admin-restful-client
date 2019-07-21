@@ -55,6 +55,8 @@ const (
 	abort
 	info
 	userqueue
+	userdetails
+	stopuser
 	cmdqueue
 	holdqueue
 	highwater
@@ -116,7 +118,9 @@ var displayName = []displayInfo{
 	displayInfo{id: cancel, cmdShort: "cancel", cmdDescription: "Cancel Adabas database"},
 	displayInfo{id: abort, cmdShort: "abort", cmdDescription: "Abort Adabas database"},
 	displayInfo{id: info, cmdShort: "info", cmdDescription: "Retrieve Adabas database information"},
-	displayInfo{id: userqueue, cmdShort: "userqueue", cmdDescription: "Display current user queue"},
+	displayInfo{id: userqueue, cmdShort: "userqueue", cmdDescription: "Display user queue of database"},
+	displayInfo{id: userdetails, cmdShort: "userdetails", cmdDescription: "Display user queue entry details"},
+	displayInfo{id: stopuser, cmdShort: "stopuser", cmdDescription: "Stop a selected user in user queue"},
 	displayInfo{id: cmdqueue, cmdShort: "cmdqueue", cmdDescription: "Display current command queue"},
 	displayInfo{id: holdqueue, cmdShort: "holdqueue", cmdDescription: "Display current hold queue"},
 	displayInfo{id: highwater, cmdShort: "highwater", cmdDescription: "Display high water mark"},
@@ -301,6 +305,7 @@ func main() {
 				aborted = true
 				os.Exit(4)
 			case env:
+
 				err = database.Environment(clientInstance, auth)
 			case list:
 				err = database.List(clientInstance, auth)
@@ -316,6 +321,10 @@ func main() {
 				err = database.Operation(clientInstance, *dbid, "", auth)
 			case userqueue:
 				err = database.UserQueue(clientInstance, *dbid, auth)
+			case userdetails:
+				err = database.UserDetails(clientInstance, *dbid, *param, auth)
+			case stopuser:
+				err = database.DeleteUser(clientInstance, *dbid, *param, auth)
 			case cmdqueue:
 				err = database.CommandQueue(clientInstance, *dbid, auth)
 			case holdqueue:
