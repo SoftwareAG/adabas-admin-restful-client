@@ -169,7 +169,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 	params.Rfc3339 = &rfc3339
 	params.Dbid = float64(dbid)
 	params.FileOperation = strconv.Itoa(fnr)
-	resp, err := clientInstance.OnlineOffline.GetDatabaseFile(params, auth)
+	resp, accept, err := clientInstance.OnlineOffline.GetDatabaseFile(params, auth)
 	if err != nil {
 		switch err.(type) {
 		case *online_offline.GetDatabaseFileBadRequest:
@@ -181,6 +181,10 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 		return err
 	}
 
+	if accept != nil {
+		fmt.Println("Operation done:", *accept)
+		return nil
+	}
 	p := message.NewPrinter(language.English)
 
 	p.Printf("\nDatabase %03d file %03d:\n", dbid, fnr)
@@ -220,7 +224,7 @@ func File(clientInstance *client.AdabasAdmin, dbid int, fnr int, para string, au
 		p.Printf("   Free or Isn  : %d\n", e.FreeOrIsn)
 	}
 	p.Printf("UI extents\n")
-	for _, e := range resp.Payload.File.Uiextents {
+	for _, e := range resp.Payload.File.UIextents {
 		p.Printf(" - First RABN   : %d\n", e.FirstRabn)
 		p.Printf("   Last RABN    : %d\n", e.LastRabn)
 		p.Printf("   Free or Isn  : %d\n", e.FreeOrIsn)
@@ -261,6 +265,26 @@ func RenumberFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, newNumb
 	flNumber := float64(number)
 	params.Number = &flNumber
 	params.FileOperation = strconv.Itoa(fnr) + ":renumber"
+	resp, err := clientInstance.Online.PutAdabasFileParameter(params, auth)
+	if err != nil {
+		switch err.(type) {
+		case *online.PutAdabasFileParameterBadRequest:
+			response := err.(*online.PutAdabasFileParameterBadRequest)
+			fmt.Println(response.Payload.Error.Code, ":", response.Payload.Error.Message)
+		default:
+			fmt.Println("Error:", err)
+		}
+		return err
+	}
+	fmt.Println("Status: ", resp.Payload.Status.Message)
+	return nil
+}
+
+// RefreshFile refresh database file
+func RefreshFile(clientInstance *client.AdabasAdmin, dbid int, fnr int, auth runtime.ClientAuthInfoWriter) error {
+	params := online.NewPutAdabasFileParameterParams()
+	params.Dbid = float64(dbid)
+	params.FileOperation = strconv.Itoa(fnr) + ":refresh"
 	resp, err := clientInstance.Online.PutAdabasFileParameter(params, auth)
 	if err != nil {
 		switch err.(type) {

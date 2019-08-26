@@ -72,6 +72,8 @@ const (
 	files
 	file
 	deletefile
+	renumberfile
+	refreshfile
 	fields
 	information
 	container
@@ -134,6 +136,8 @@ var displayName = []displayInfo{
 	displayInfo{id: files, cmdShort: "files", cmdDescription: "Display Adabas file list"},
 	displayInfo{id: file, cmdShort: "file", cmdDescription: "Display Adabas file"},
 	displayInfo{id: deletefile, cmdShort: "deletefile", cmdDescription: "Delete Adabas file"},
+	displayInfo{id: renumberfile, cmdShort: "renumberfile", cmdDescription: "Renumber Adabas file"},
+	displayInfo{id: refreshfile, cmdShort: "refreshfile", cmdDescription: "Refresh Adabas file"},
 	displayInfo{id: fields, cmdShort: "fields", cmdDescription: "Display Adabas file definition table"},
 	displayInfo{id: information, cmdShort: "information", cmdDescription: "Display Adabas database information"},
 	displayInfo{id: container, cmdShort: "container", cmdDescription: "Display Adabas database container"},
@@ -350,6 +354,10 @@ func main() {
 				err = database.File(clientInstance, *dbid, *fnr, *param, auth)
 			case deletefile:
 				err = database.DeleteFile(clientInstance, *dbid, *fnr, auth)
+			case renumberfile:
+				err = database.RenumberFile(clientInstance, *dbid, *fnr, *param, auth)
+			case refreshfile:
+				err = database.RefreshFile(clientInstance, *dbid, *fnr, auth)
 			case information:
 				err = database.Information(clientInstance, *dbid, auth)
 			case fields:
@@ -450,7 +458,7 @@ func version(clientInstance *client.AdabasAdmin) error {
 
 func adabasEnv(clientInstance *client.AdabasAdmin, auth runtime.ClientAuthInfoWriter) {
 	params := environment.NewGetEnvironmentsParams()
-	resp, err := clientInstance.Environment.GetEnvironments(params, auth)
+	resp, err := clientInstance.Environment.GetEnvironments(params)
 	if err != nil {
 		fmt.Println("Error:", err)
 		return

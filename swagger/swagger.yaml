@@ -1,7 +1,10 @@
+# Software AG
+schemes:
+  - http
+  - https
 swagger: '2.0'
 info:
   description: Adabas Administration
-  version: 6.7.0.0.06112018
   title: Adabas Administration
   contact:
     name: Software AG Support
@@ -10,60 +13,106 @@ info:
   license:
     name: Software AG
     url: 'http://documentation.softwareag.com/legal/general_license.txt'
+  version: 6.7.0.0.24032019
 host: 'localhost:8090'
 basePath: /
-schemes:
-  - http
-  - https
-tags:
-  - name: Environment
-    description: Adabas Administration information
-  - name: Online
-    description: Adabas Online usage only
-  - name: Offline
-    description: Adabas offline usage only
-  - name: OnlineOffline
-    description: Adabas Online and offline usage possible
-  - name: Scheduler
-    description: Scheduler managing jobs running in the RESTful server
-securityDefinitions:
-  BasicAuth:
-    type: basic
-    description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`
 paths:
-  /version:
+  '/login':
     get:
+      security:
+        - BasicAuth: []
+      description: Login receiving JWT
+      produces:
+        - application/json
       tags:
         - Environment
-      description: Retrieves the current version
-      operationId: getVersion
+      operationId: getLoginSession
+      responses:
+        '200':
+          description: 'Successful login'
+          schema:
+            $ref: "#/definitions/AuthorizationToken"
+        default:
+          description: Error authorization
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+      description: Login receiving JWT
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: loginSession
+      responses:
+        '200':
+          description: 'Successful login'
+          schema:
+            $ref: "#/definitions/AuthorizationToken"
+        default:
+          description: Error authorization
+          schema:
+            $ref: '#/definitions/Error'
+  '/logout':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Remove the session
       consumes:
         - application/json
       produces:
         - application/json
-      parameters: []
+      tags:
+        - Environment
+      operationId: removeSession
       responses:
         '200':
-          description: 'Successful response, with a list of internal versions'
-          schema:
-            $ref: '#/definitions/Versions'
+          description: 'Successful response, session is invalidated'
         '400':
-          description: Error application not running correctly
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+  '/shutdown/{hash}':
+    put:
+      security:
+        - BasicAuth: [ admin ]
+        - hasRole: [ admin ]
+      description: Init shutdown procedure
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: shutdownServer
+      parameters:
+        - type: string
+          description: Shutdown validation hash
+          name: hash
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, if shutdown procedure valid'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '404':
+          description: Error shutdown hash invalid
           schema:
             $ref: '#/definitions/Error'
   /env:
     get:
-      tags:
-        - Environment
+      security: []
       description: Retrieves the list of environments
-      operationId: getEnvironments
-      security:
-        - BasicAuth: []
       consumes:
         - application/json
       produces:
         - application/json
-      parameters: []
+      tags:
+        - Environment
+      operationId: getEnvironments
       responses:
         '200':
           description: 'Successful response, with a list of Adabas environment and versions'
@@ -75,63 +124,81 @@ paths:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-  /logout:
+  /rest/env:
     get:
-      tags:
-        - Environment
-      description: Remove the session
-      operationId: removeSession
-      security:
-        - BasicAuth: []
+      security: []
+      description: Retrieves the list of environments
       consumes:
         - application/json
       produces:
         - application/json
-      parameters: []
+      tags:
+        - Environment
+      operationId: getVersions
       responses:
         '200':
-          description: 'Successful response, session is invalidated'
+          description: 'Successful response, with a list of Adabas environment and versions'
+          schema:
+            $ref: '#/definitions/Environments'
         '400':
           description: Environment evaluation error
           schema:
             $ref: '#/definitions/Error'
-  /adabas/env:
-    get:
-      tags:
-        - OnlineOffline
-      description: Retrieves a list of Adabas version installations used
-      operationId: getDatabasesInstallation
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters: []
-      responses:
-        '200':
-          description: 'Successful response, with list of known databases.'
-          schema:
-            $ref: '#/definitions/AdabasEnvironment'
-        '400':
-          description: Database error evaluating list
-          schema:
-            $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-  /adabas/database:
+  /version:
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieves a list of databases known by Adabas Interface.
-      operationId: getDatabases
-      security:
-        - BasicAuth: []
+      security: []
+      description: Retrieves the current version
       consumes:
         - application/json
       produces:
         - application/json
-      parameters: []
+      tags:
+        - Environment
+      operationId: getVersion
+      responses:
+        '200':
+          description: 'Successful response, with a list of internal versions'
+          schema:
+            $ref: '#/definitions/Versions'
+        '400':
+          description: Error application not running correctly
+          schema:
+            $ref: '#/definitions/Error'
+  /adabas/version:
+    get:
+      security: []
+      description: Retrieves the current version
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getAdabasVersion
+      responses:
+        '200':
+          description: 'Successful response, with a list of internal versions'
+          schema:
+            $ref: '#/definitions/Versions'
+        '400':
+          description: Error application not running correctly
+          schema:
+            $ref: '#/definitions/Error'
+  /adabas/database:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of databases known by Adabas Interface.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabases
       responses:
         '200':
           description: 'Successful response, with list of known databases.'
@@ -144,19 +211,20 @@ paths:
         '401':
           description: Authorization error
     post:
-      tags:
-        - Offline
-      description: Create a new Adabas database
-      operationId: postAdabasDatabase
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Create a new Adabas database
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Offline
+      operationId: postAdabasDatabase
       parameters:
-        - in: body
-          name: database
+        - name: database
+          in: body
           schema:
             $ref: '#/definitions/Database'
       responses:
@@ -172,64 +240,25 @@ paths:
           description: Authorization error
   '/adabas/database/{dbid_operation}':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieve the current status of database with the given dbid
-      operationId: databaseOperation
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve the current status of database with the given dbid
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: databaseOperation
       parameters:
-        - name: dbid_operation
-          in: path
+        - type: string
           description: >-
             Database ID optional with operation append with : like 123:shutdown
             Possible operations are - cancel - shutdown - abort - start
-          required: true
-          type: string
-      responses:
-        '200':
-          description: 'Successful response, with database status'
-          schema:
-            $ref: '#/definitions/DatabaseStatus'
-        '202':
-          description: 'Successful response, with database status'
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '400':
-          description: Database evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-    post:
-      tags:
-        - OnlineOffline
-      description: Initiate operations on the given dbid
-      operationId: databaseOperations
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: dbid_operation
+          name: dbid_operation
           in: path
-          description: >-
-            Database ID optional with operation append with : like 123:shutdown
-            Possible operations are - cancel - shutdown - abort - start -
-            feofclog - feofplog - feofelog
           required: true
-          type: string
-        - name: etsync
-          in: query
-          description: Only used together with PLOG FEOF
-          required: false
-          type: boolean
       responses:
         '200':
           description: 'Successful response, with database status'
@@ -246,27 +275,28 @@ paths:
         '401':
           description: Authorization error
     put:
-      tags:
-        - OnlineOffline
-      description: Change resource of the database
-      operationId: putDatabaseResource
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Change resource of the database
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: putDatabaseResource
       parameters:
-        - name: dbid_operation
-          in: path
+        - type: string
           description: Database ID
+          name: dbid_operation
+          in: path
           required: true
-          type: string
-        - name: name
-          in: query
+        - type: string
           description: Database name
+          name: name
+          in: query
           required: true
-          type: string
       responses:
         '200':
           description: 'Successful response, with database status'
@@ -282,23 +312,64 @@ paths:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-    delete:
-      tags:
-        - Offline
-      description: Delete the Adabas database
-      operationId: deleteAdabasDatabase
+    post:
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Initiate operations on the given dbid
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: databaseOperations
       parameters:
-        - name: dbid_operation
+        - type: string
+          description: >-
+            Database ID optional with operation append with : like 123:shutdown
+            Possible operations are - cancel - shutdown - abort - start -
+            feofclog - feofplog - feofelog
+          name: dbid_operation
           in: path
-          description: Database ID
           required: true
-          type: number
+        - type: boolean
+          description: Only used together with PLOG FEOF
+          name: etsync
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with database status'
+          schema:
+            $ref: '#/definitions/DatabaseStatus'
+        '202':
+          description: 'Successful response, with database status'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Database evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete the Adabas database
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Offline
+      operationId: deleteAdabasDatabase
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid_operation
+          in: path
+          required: true
       responses:
         '200':
           description: 'Successful response, a Adabas database is deleted'
@@ -310,56 +381,79 @@ paths:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-  '/adabas/database/{dbid}/gcb':
+  '/adabas/database/{dbid}/actstats':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieve the current GCB of the database with the given dbid
-      operationId: getDatabaseGcb
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas activity statistics
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: getDatabaseActStats
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, with database GCB'
+          description: 'Successful response, with Adabas Activity statistics'
           schema:
-            $ref: '#/definitions/DatabaseGcb'
+            $ref: '#/definitions/ActivityStats'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/bpstats':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas buffer pool statistics
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Online
+      operationId: getDatabaseBPStats
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+      responses:
+        '200':
+          description: 'Successful response, with Adabas Buffer Pool statistics'
+          schema:
+            $ref: '#/definitions/BufferPoolStats'
         '400':
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/checkpoints':
     get:
-      tags:
-        - Online
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
       description: >-
         Retrieve the Adabas Checkpoint list out of the database with the given
         dbid
-      operationId: getDatabaseCheckpoints
-      security:
-        - BasicAuth: []
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: getDatabaseCheckpoints
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: start_time
-          in: query
+        - type: string
           description: Timestamp of first checkpoint entry
-          required: false
-          type: string
-        - name: end_time
+          name: start_time
           in: query
+        - type: string
           description: Timestamp of last checkpoint entry
-          required: false
-          type: string
+          name: end_time
+          in: query
       responses:
         '200':
           description: 'Successful response, with database Checkpoints'
@@ -370,28 +464,27 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
-      tags:
-        - Online
-      description: Delete Adabas Checkpoints out of the database with the given dbid
-      operationId: deleteDatabaseCheckpoints
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete Adabas Checkpoints out of the database with the given dbid
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: deleteDatabaseCheckpoints
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: start_time
-          in: query
+        - type: string
           description: Timestamp of first checkpoint entry
-          required: false
-          type: string
-        - name: end_time
+          name: start_time
           in: query
+        - type: string
           description: Timestamp of last checkpoint entry
-          required: false
-          type: string
+          name: end_time
+          in: query
       responses:
         '200':
           description: 'Successful response, when database Checkpoints are deleted'
@@ -401,102 +494,19 @@ paths:
           description: Database not available
           schema:
             $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/userqueue':
-    get:
-      tags:
-        - Online
-      description: Retrieve a list of user queue entries
-      operationId: getDatabaseUserQueue
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - $ref: '#/parameters/rfc3339Param'
-      responses:
-        '200':
-          description: 'Successful response, with database user queue entries'
-          schema:
-            $ref: '#/definitions/UserQueue'
-        '400':
-          description: Database not available or offline
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-  '/adabas/database/{dbid}/userqueue/{queueid}':
-    get:
-      tags:
-        - Online
-      description: Provide User queue details of an specific user queue element
-      operationId: getUserQueueDetail
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - name: queueid
-          in: path
-          description: User Queue ID
-          required: true
-          type: number
-        - $ref: '#/parameters/rfc3339Param'
-      responses:
-        '200':
-          description: 'Successful response, a User queue detailed are received'
-          schema:
-            $ref: '#/definitions/UserQueueDetail'
-        '400':
-          description: Error finding user queue entry
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-    delete:
-      tags:
-        - Online
-      description: Stop the User Queue element
-      operationId: stopUserQueueEntry
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - name: queueid
-          in: path
-          description: User Queue ID
-          required: true
-          type: number
-      responses:
-        '200':
-          description: 'Successful response, a User queue is stopped'
-        '400':
-          description: Error stopping the database user queue entry
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
   '/adabas/database/{dbid}/commandqueue':
     get:
-      tags:
-        - Online
-      description: Retrieve a list of user queue entries
-      operationId: getDatabaseCommandQueue
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve a list of user queue entries
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: getDatabaseCommandQueue
       parameters:
         - $ref: '#/parameters/dbidParam'
         - $ref: '#/parameters/rfc3339Param'
@@ -509,260 +519,43 @@ paths:
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/holdqueue':
+  '/adabas/database/{dbid}/commandstats':
     get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas command statistics
+      consumes:
+        - application/json
+      produces:
+        - application/json
       tags:
         - Online
-      description: Retrieve a list of hold queue entries
-      operationId: getDatabaseHoldQueue
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - $ref: '#/parameters/rfc3339Param'
-      responses:
-        '200':
-          description: 'Successful response, with database hold queue entries'
-          schema:
-            $ref: '#/definitions/HoldQueue'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/parameter':
-    get:
-      tags:
-        - OnlineOffline
-      description: Retrieve Adabas parameters
-      operationId: getDatabaseParameter
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - name: type
-          in: query
-          description: Type of parameter static or dynamic
-          required: true
-          type: string
-          enum: [dynamic, DYNAMIC, static, STATIC]
-      responses:
-        '200':
-          description: 'Successful response, with Adabas database parameters'
-          schema:
-            $ref: '#/definitions/Parameter'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-    put:
-      tags:
-        - OnlineOffline
-      description: >-
-        Change Adabas parameter, Adabas parameter can even be given as request
-        parameter
-      operationId: putAdabasParameter
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - name: AR
-          in: query
-          type: string
-        - name: BI
-          in: query
-          type: boolean
-        - name: CLOGLAYOUT
-          in: query
-          type: integer
-        - name: PLOG
-          in: query
-          type: boolean
-        - name: LPXA
-          in: query
-          type: integer
-        - name: BFIO
-          in: query
-          type: integer
-        - name: CLOGBMAX
-          in: query
-          type: integer
-        - name: LOGGING
-          in: query
-          type: string
-        - name: NCL
-          in: query
-          type: integer
-        - name: NISNHQ
-          in: query
-          type: integer
-        - name: NT
-          in: query
-          type: integer
-        - name: NU
-          in: query
-          type: integer
-        - name: OPTIONS
-          in: query
-          type: string
-        - name: TNAA
-          in: query
-          type: integer
-        - name: TNAE
-          in: query
-          type: integer
-        - name: TNAX
-          in: query
-          type: integer
-        - name: TT
-          in: query
-          type: integer
-        - name: USEREXITS
-          in: query
-          type: string
-        - name: RPL_RECORDS
-          in: query
-          type: integer
-        - name: RPL_BLOCKS
-          in: query
-          type: integer
-        - name: RPL_TOTAL
-          in: query
-          type: integer
-        - name: LAB
-          in: query
-          type: integer
-        - name: LABX
-          in: query
-          type: integer
-        - name: LBP
-          in: query
-          type: integer
-        - name: LWP
-          in: query
-          type: integer
-        - name: WRITE_LIMIT
-          in: query
-          type: integer
-        - name: APU_UNITS
-          in: query
-          type: integer
-        - name: APU_WORKERS
-          in: query
-          type: integer
-        - name: APU_RECVS
-          in: query
-          type: integer
-        - name: ADATCP
-          in: query
-          type: boolean
-        - name: ADATCPPORT
-          in: query
-          type: integer
-        - name: ADATCPATB
-          in: query
-          type: integer
-        - name: ADATCPRECEIVER
-          in: query
-          type: integer
-        - name: ADATCPCONNECTIONS
-          in: query
-          type: integer
-        - name: type
-          in: query
-          description: Type of parameter static or dynamic
-          required: true
-          type: string
-          enum: [dynamic, DYNAMIC, static, STATIC]
-      responses:
-        '200':
-          description: 'Successful response, parameter changed'
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '400':
-          description: Error changing the parameter
-          schema:
-            $ref: '#/definitions/Error'
-    post:
-      tags:
-        - OnlineOffline
-      description: >-
-        Change Adabas parameter, Adabas parameter can even be given as request
-        parameter
-      operationId: postAdabasParameter
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-        - name: type
-          in: query
-          description: Type of parameter static or dynamic
-          required: true
-          type: string
-          enum: [dynamic, DYNAMIC, static, STATIC]
-        - in: body
-          name: parameter
-          schema:
-            type: object
-      responses:
-        '200':
-          description: 'Successful response, parameter changed'
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '400':
-          description: Error changing the parameter
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/parameterinfo':
-    get:
-      tags:
-        - OnlineOffline
-      description: Retrieve Adabas parameter metadata information
-      operationId: getDatabaseParameterInfo
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
+      operationId: getDatabaseCommandStats
       parameters:
         - $ref: '#/parameters/dbidParam'
       responses:
         '200':
-          description: 'Successful response, with Adabas database parameters'
+          description: 'Successful response, with Adabas command statistics'
           schema:
-            $ref: '#/definitions/ParameterInfos'
+            $ref: '#/definitions/CommandStats'
         '400':
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/container':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieve Adabas containers
-      operationId: getDatabaseContainer
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas containers
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseContainer
       parameters:
         - $ref: '#/parameters/dbidParam'
       responses:
@@ -775,20 +568,21 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     post:
-      tags:
-        - OnlineOffline
-      description: Add a container to Adabas
-      operationId: addAdabasContainer
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Add a container to Adabas
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: addAdabasContainer
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - in: body
-          name: database
+        - name: database
+          in: body
           schema:
             $ref: '#/definitions/ContainerInfo'
       responses:
@@ -802,23 +596,24 @@ paths:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/container/${container_type}':
     delete:
-      tags:
-        - Offline
-      description: Retrieve Adabas containers
-      operationId: removeDatabaseContainer
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas containers
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Offline
+      operationId: removeDatabaseContainer
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: container_type
-          in: path
+        - type: string
           description: 'Container type, may be ASSO or DATA'
+          name: container_type
+          in: path
           required: true
-          type: string
       responses:
         '200':
           description: 'Successful response,  Adabas database container is removed'
@@ -828,157 +623,109 @@ paths:
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/hwm':
+  '/adabas/database/{dbid}/fields/{file}':
     get:
-      tags:
-        - Online
-      description: Retrieve Adabas High water mark
-      operationId: getDatabaseHighWater
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves Adabas FDT information for a file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getFieldDefinitionTable
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - type: number
+          description: >-
+            File number and operation seprated by ':' Possible operations are -
+            refresh renumber
+          name: file
+          in: path
+          required: true
         - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, with Adabas High Water Mark statistics'
+          description: 'Successful response, with a FCB representation of the Adabas FCB'
           schema:
-            $ref: '#/definitions/HWM'
+            $ref: '#/definitions/Fdt'
         '400':
-          description: Database not available/unknown
+          description: Error receiving file information
           schema:
             $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/commandstats':
-    get:
-      tags:
-        - Online
-      description: Retrieve Adabas command statistics
-      operationId: getDatabaseCommandStats
+    post:
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Modify Adabas FDT information for a file
       consumes:
         - application/json
       produces:
         - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-      responses:
-        '200':
-          description: 'Successful response, with Adabas command statistics'
-          schema:
-            $ref: '#/definitions/CommandStats'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/bpstats':
-    get:
-      tags:
-        - Online
-      description: Retrieve Adabas buffer pool statistics
-      operationId: getDatabaseBPStats
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-      responses:
-        '200':
-          description: 'Successful response, with Adabas Buffer Pool statistics'
-          schema:
-            $ref: '#/definitions/BufferPoolStats'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/actstats':
-    get:
-      tags:
-        - Online
-      description: Retrieve Adabas activity statistics
-      operationId: getDatabaseActStats
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-      responses:
-        '200':
-          description: 'Successful response, with Adabas Activity statistics'
-          schema:
-            $ref: '#/definitions/ActivityStats'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/threadtable':
-    get:
-      tags:
-        - Online
-      description: Retrieve Adabas Thread Table
-      operationId: getDatabaseThreadTable
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/dbidParam'
-      responses:
-        '200':
-          description: 'Successful response, with Adabas Thread table'
-          schema:
-            $ref: '#/definitions/ThreadTable'
-        '400':
-          description: Database not available/unknown
-          schema:
-            $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/nuclog':
-    get:
       tags:
         - OnlineOffline
-      description: Retrieve Adabas nucleus output
-      operationId: getDatabaseNucleusLog
+      operationId: modifyFieldDefinitionTable
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/fileParam'
+        - type: string
+          description: Add fields to the FDT
+          name: addfields
+          in: query
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with a FCB representation of the Adabas FCB'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Error receiving file information
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Drop a list of fields in an Adabas file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: dropFields
       parameters:
         - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/fileParam'
+        - type: string
+          description: List of fields to be deleted
+          name: fields
+          in: query
+          required: true
       responses:
         '200':
-          description: 'Successful response, with Adabas Nucleus Log'
+          description: 'Successful response, with a FCB representation of the Adabas FCB'
           schema:
-            $ref: '#/definitions/NucleusLog'
+            $ref: '#/definitions/StatusResponse'
         '400':
-          description: Database not available/unknown
+          description: Error receiving file information
           schema:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/file':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieves a list of files defined in the database
-      operationId: getDatabaseFiles
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of files defined in the database
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseFiles
       parameters:
         - $ref: '#/parameters/dbidParam'
       responses:
@@ -991,16 +738,17 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     post:
-      tags:
-        - Online
-      description: Create a new Adabas file
-      operationId: postAdabasFile
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Create a new Adabas file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: postAdabasFile
       parameters:
         - $ref: '#/parameters/dbidParam'
         - name: fdufdt
@@ -1018,95 +766,93 @@ paths:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/file/{file_operation}':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieves Adabas FCB information for a file
-      operationId: getDatabaseFile
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves Adabas FCB information for a file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseFile
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: file_operation
-          in: path
+        - type: string
           description: >-
-            File number and operation seprated by ':' Possible operations are -
+            File number and operation separated by ':' Possible operations are -
             refresh renumber
+          name: file_operation
+          in: path
           required: true
-          type: string
-        - name: name
-          in: query
+        - type: string
           description: Used for operation rename
-          required: false
-          type: string
-        - name: number
+          name: name
           in: query
+        - type: number
           description: Used for operation renumber
-          required: false
-          type: number
+          name: number
+          in: query
         - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
           description: 'Successful response, with a FCB representation of the Adabas FCB'
           schema:
             $ref: '#/definitions/Fcb'
+        '202':
+          description: 'Operation done'
         '400':
           description: Error receiving file information
           schema:
             $ref: '#/definitions/Error'
     put:
-      tags:
-        - Online
-      description: Adapt a  Adabas file parameter
-      operationId: putAdabasFileParameter
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Adapt a  Adabas file parameter
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: putAdabasFileParameter
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: file_operation
-          in: path
+        - type: string
           description: >-
             File number and operation, separated with a :. Possible operation
             are renumber, refresh
+          name: file_operation
+          in: path
           required: true
-          type: string
-        - name: number
-          in: query
+        - type: number
           description: New File number
-          required: false
-          type: number
-        - name: name
+          name: number
           in: query
+        - type: string
           description: Used for operation rename
-          required: false
-          type: string
-        - name: pgmrefresh
+          name: name
           in: query
+        - type: boolean
           description: Set PGM refresh
-          required: false
-          type: boolean
-        - name: spacereusage
+          name: pgmrefresh
           in: query
+        - type: boolean
           description: Set space resage
-          required: false
-          type: boolean
-        - name: isnreusage
+          name: spacereusage
           in: query
+        - type: boolean
           description: Set ISN resage
-          required: false
-          type: boolean
-        - name: spannedrecords
+          name: isnreusage
           in: query
-          description: Enable/Disable file option for spanned records, need to be given exclusive
-          required: false
-          type: boolean
+        - type: boolean
+          description: >-
+            Enable/Disable file option for spanned records, need to be given
+            exclusive
+          name: spannedrecords
+          in: query
       responses:
         '200':
           description: 'Successful response, with new Adabas file created'
@@ -1117,23 +863,24 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     post:
-      tags:
-        - Online
-      description: Create a new Adabas file
-      operationId: createAdabasFile
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Create a new Adabas file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: createAdabasFile
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: file_operation
-          in: path
+        - type: string
           description: 'File number, the file number in the body is ignored'
+          name: file_operation
+          in: path
           required: true
-          type: string
         - name: fdufdt
           in: body
           schema:
@@ -1148,23 +895,24 @@ paths:
           schema:
             $ref: '#/definitions/Error'
     delete:
-      tags:
-        - OnlineOffline
-      description: Delete the file
-      operationId: deleteFile
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete the file
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: deleteFile
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: file_operation
-          in: path
+        - type: number
           description: 'File number, no operation possible'
+          name: file_operation
+          in: path
           required: true
-          type: number
       responses:
         '200':
           description: 'Successful response, a Adabas file is deleted'
@@ -1174,105 +922,400 @@ paths:
           description: Error deleting the file
           schema:
             $ref: '#/definitions/Error'
-  '/adabas/database/{dbid}/fields/{file}':
+  '/adabas/database/{dbid}/gcb':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieves Adabas FDT information for a file
-      operationId: getFieldDefinitionTable
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve the current GCB of the database with the given dbid
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseGcb2
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: file
-          in: path
-          description: >-
-            File number and operation seprated by ':' Possible operations are -
-            refresh renumber
-          required: true
-          type: number
         - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, with a FCB representation of the Adabas FCB'
+          description: 'Successful response, with database GCB'
           schema:
-            $ref: '#/definitions/Fdt'
+            $ref: '#/definitions/DatabaseGcb'
         '400':
-          description: Error receiving file information
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/GCB':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve the current GCB of the database with the given dbid
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseGcb
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
+      responses:
+        '200':
+          description: 'Successful response, with database GCB'
+          schema:
+            $ref: '#/definitions/DatabaseGcb'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/holdqueue':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve a list of hold queue entries
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Online
+      operationId: getDatabaseHoldQueue
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
+      responses:
+        '200':
+          description: 'Successful response, with database hold queue entries'
+          schema:
+            $ref: '#/definitions/HoldQueue'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/hwm':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas High water mark
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Online
+      operationId: getDatabaseHighWater
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/rfc3339Param'
+      responses:
+        '200':
+          description: 'Successful response, with Adabas High Water Mark statistics'
+          schema:
+            $ref: '#/definitions/HWM'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/nuclog':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas nucleus output
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseNucleusLog
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+      responses:
+        '200':
+          description: 'Successful response, with Adabas Nucleus Log'
+          schema:
+            $ref: '#/definitions/NucleusLog'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/parameter':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas parameters
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseParameter
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - enum:
+            - dynamic
+            - DYNAMIC
+            - static
+            - STATIC
+          type: string
+          description: Type of parameter static or dynamic
+          name: type
+          in: query
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with Adabas database parameters'
+          schema:
+            $ref: '#/definitions/Parameter'
+        '400':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Change Adabas parameter, Adabas parameter can even be given as request
+        parameter
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - OnlineOffline
+      operationId: putAdabasParameter
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - type: string
+          name: AR
+          in: query
+        - type: boolean
+          name: BI
+          in: query
+        - type: integer
+          name: CLOGLAYOUT
+          in: query
+        - type: boolean
+          name: PLOG
+          in: query
+        - type: integer
+          name: LPXA
+          in: query
+        - type: integer
+          name: BFIO
+          in: query
+        - type: integer
+          name: CLOGBMAX
+          in: query
+        - type: string
+          name: LOGGING
+          in: query
+        - type: integer
+          name: NCL
+          in: query
+        - type: integer
+          name: NISNHQ
+          in: query
+        - type: integer
+          name: NT
+          in: query
+        - type: integer
+          name: NU
+          in: query
+        - type: string
+          name: OPTIONS
+          in: query
+        - type: integer
+          name: TNAA
+          in: query
+        - type: integer
+          name: TNAE
+          in: query
+        - type: integer
+          name: TNAX
+          in: query
+        - type: integer
+          name: TT
+          in: query
+        - type: string
+          name: USEREXITS
+          in: query
+        - type: integer
+          name: RPL_RECORDS
+          in: query
+        - type: integer
+          name: RPL_BLOCKS
+          in: query
+        - type: integer
+          name: RPL_TOTAL
+          in: query
+        - type: integer
+          name: LAB
+          in: query
+        - type: integer
+          name: LABX
+          in: query
+        - type: integer
+          name: LBP
+          in: query
+        - type: integer
+          name: LWP
+          in: query
+        - type: integer
+          name: WRITE_LIMIT
+          in: query
+        - type: integer
+          name: APU_UNITS
+          in: query
+        - type: integer
+          name: APU_WORKERS
+          in: query
+        - type: integer
+          name: APU_RECVS
+          in: query
+        - type: boolean
+          name: ADATCP
+          in: query
+        - type: integer
+          name: ADATCPPORT
+          in: query
+        - type: integer
+          name: ADATCPATB
+          in: query
+        - type: integer
+          name: ADATCPRECEIVER
+          in: query
+        - type: integer
+          name: ADATCPCONNECTIONS
+          in: query
+        - enum:
+            - dynamic
+            - DYNAMIC
+            - static
+            - STATIC
+          type: string
+          description: Type of parameter static or dynamic
+          name: type
+          in: query
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, parameter changed'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Error changing the parameter
           schema:
             $ref: '#/definitions/Error'
     post:
-      tags:
-        - OnlineOffline
-      description: Modify Adabas FDT information for a file
-      operationId: modifyFieldDefinitionTable
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: 
+        Change Adabas parameter, Adabas parameter can even be given as request
+        parameter
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: postAdabasParameter
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - $ref: '#/parameters/fileParam'
-        - name: addfields
-          in: query
-          description: Add fields to the FDT
-          required: true
+        - enum:
+            - dynamic
+            - DYNAMIC
+            - static
+            - STATIC
           type: string
+          description: Type of parameter static or dynamic
+          name: type
+          in: query
+          required: true
+        - name: parameter
+          in: body
+          schema:
+            type: object
       responses:
         '200':
-          description: 'Successful response, with a FCB representation of the Adabas FCB'
+          description: 'Successful response, parameter changed'
           schema:
             $ref: '#/definitions/StatusResponse'
         '400':
-          description: Error receiving file information
+          description: Error changing the parameter
           schema:
             $ref: '#/definitions/Error'
-    delete:
-      tags:
-        - OnlineOffline
-      description: Drop a list of fields in an Adabas file
-      operationId: dropFields
+  '/adabas/database/{dbid}/parameterinfo':
+    get:
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas parameter metadata information
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabaseParameterInfo
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - $ref: '#/parameters/fileParam'
-        - name: fields
-          in: query
-          description: List of fields to be deleted
-          required: true
-          type: string
       responses:
         '200':
-          description: 'Successful response, with a FCB representation of the Adabas FCB'
+          description: 'Successful response, with Adabas database parameters'
           schema:
-            $ref: '#/definitions/StatusResponse'
+            $ref: '#/definitions/ParameterInfos'
         '400':
-          description: Error receiving file information
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/adabas/database/{dbid}/threadtable':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve Adabas Thread Table
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Online
+      operationId: getDatabaseThreadTable
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+      responses:
+        '200':
+          description: 'Successful response, with Adabas Thread table'
+          schema:
+            $ref: '#/definitions/ThreadTable'
+        '400':
+          description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/ucb':
     get:
-      tags:
-        - OnlineOffline
-      description: Retrieves Adabas UCB entries
-      operationId: getUCB
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves Adabas UCB entries
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getUCB
       parameters:
         - $ref: '#/parameters/dbidParam'
         - $ref: '#/parameters/rfc3339Param'
@@ -1287,23 +1330,24 @@ paths:
             $ref: '#/definitions/Error'
   '/adabas/database/{dbid}/ucb/{ucbid}':
     delete:
-      tags:
-        - OnlineOffline
-      description: Delete an Adabas UCB entry
-      operationId: deleteUCB
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete an Adabas UCB entry
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: deleteUCB
       parameters:
         - $ref: '#/parameters/dbidParam'
-        - name: ucbid
-          in: path
+        - type: integer
           description: UCB entry id
+          name: ucbid
+          in: path
           required: true
-          type: integer
       responses:
         '200':
           description: 'Successful response, UCB entry is deleted.'
@@ -1313,372 +1357,310 @@ paths:
           description: Error receiving file information
           schema:
             $ref: '#/definitions/Error'
-  /scheduler/job:
+  '/adabas/database/{dbid}/userqueue':
     get:
-      tags:
-        - Scheduler
-      description: Retrieves a list of databases known by Adabas Interface.
-      operationId: getJobs
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieve a list of user queue entries
       consumes:
         - application/json
       produces:
         - application/json
-      parameters: []
-      responses:
-        '200':
-          description: 'Successful response, with list of known databases.'
-          schema:
-            $ref: '#/definitions/JobsList'
-        '401':
-          description: Authorization error
-        '404':
-          description: Database not available/unknown
-    put:
       tags:
-        - Scheduler
-      description: Schedule a already defined Job
-      operationId: putJob
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
+        - Online
+      operationId: getDatabaseUserQueue
       parameters:
-        - in: query
-          name: job
-          description: Work on given job name
-          required: true
-          type: string
-      responses:
-        '200':
-          description: Successful response, with new Adabas databases created
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '401':
-          description: Authorization error
-        '404':
-          description: Error creating Adabas database
-    post:
-      tags:
-        - Scheduler
-      description: Create a new Job database
-      operationId: postJob
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - in: body
-          name: job
-          schema:
-            $ref: '#/definitions/JobParameter'
-      responses:
-        '200':
-          description: 'Successful response, with new Adabas databases created'
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '400':
-          description: 'Environment evaluation error'
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: 'Authorization error'
-        '404':
-          description: 'Error creating Adabas database'
-  '/scheduler/job/{jobName}':
-    get:
-      tags:
-        - Scheduler
-      description: Retrieves a job definition
-      operationId: getJob
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: jobName
-          in: path
-          description: Job Name to be requested
-          required: true
-          type: string
-      responses:
-        '200':
-          description: 'Successful response, with list of known databases.'
-          schema:
-            $ref: '#/definitions/JobParameter'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Database not available/unknown
-    put:
-      tags:
-        - Scheduler
-      description: Schedule a already defined Job
-      operationId: scheduleJob
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: jobName
-          in: path
-          description: Job Name to be requested
-          required: true
-          type: string
-      responses:
-        '200':
-          description: >-
-            Successful response, with new Adabas databases created 
-          schema: 
-            $ref:  '#/definitions/JobStatusResponse'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Error creating Adabas database
-    delete:
-      tags:
-        - Scheduler
-      description: Delete a job definition
-      operationId: deleteJob
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: jobName
-          in: path
-          description: Job Name to be requested
-          required: true
-          type: string
-      responses:
-        '200':
-          description: 'Successfully delete the job.'
-          schema:
-            $ref:  '#/definitions/JobStatusResponse'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Job not available/unknown
-  '/scheduler/job/{jobName}/full':
-    get:
-      tags:
-        - Scheduler
-      description: Retrieves a full job definition
-      operationId: getJobFull
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: jobName
-          in: path
-          description: Job Name to be requested
-          required: true
-          type: string
-      responses:
-        '200':
-          description: 'Successful response, with list of known databases.'
-          schema:
-            $ref: '#/definitions/JobDefinition'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Database not available/unknown
-  '/scheduler/job/{jobName}/result':
-    get:
-      tags:
-        - Scheduler
-      description: Retrieves all job results
-      operationId: getJobResults
-      security:
-        - BasicAuth: []
-      consumes:
-        - application/json
-      produces:
-        - application/json
-      parameters:
-        - name: jobName
-          in: path
-          description: Job name to be requested
-          required: true
-          type: string
+        - $ref: '#/parameters/dbidParam'
         - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, with list of known databases.'
+          description: 'Successful response, with database user queue entries'
           schema:
-            $ref: '#/definitions/JobResult'
+            $ref: '#/definitions/UserQueue'
         '400':
-          description: Environment evaluation error
+          description: Database not available or offline
           schema:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-        '404':
-          description: Database not available or unknown
-  '/scheduler/job/{jobName}/result/{jobId}':
+  '/adabas/database/{dbid}/userqueue/{queueid}':
     get:
-      tags:
-        - Scheduler
-      description: Retrieves a specific job result
-      operationId: getJobResult
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Provide User queue details of an specific user queue element
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: getUserQueueDetail
       parameters:
-        - name: jobName
+        - $ref: '#/parameters/dbidParam'
+        - type: number
+          description: User Queue ID
+          name: queueid
           in: path
-          description: Job name to be requested
           required: true
-          type: string
-        - name: jobId
-          in: path
-          description: Job id of execution result to be requested
-          required: true
-          type: string
+        - $ref: '#/parameters/rfc3339Param'
       responses:
         '200':
-          description: 'Successful response, with a specific job id.'
+          description: 'Successful response, a User queue detailed are received'
           schema:
-            $ref: '#/definitions/JobResult'
+            $ref: '#/definitions/UserQueueDetail'
         '400':
-          description: Environment evaluation error
+          description: Error finding user queue entry
           schema:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-        '404':
-          description: Database not available/unknown
     delete:
-      tags:
-        - Scheduler
-      description: Delete a specific job result
-      operationId: deleteJobResult
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Stop the User Queue element
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - Online
+      operationId: stopUserQueueEntry
       parameters:
-        - name: jobName
+        - $ref: '#/parameters/dbidParam'
+        - type: number
+          description: User Queue ID
+          name: queueid
           in: path
-          description: Job name to be requested
           required: true
-          type: string
-        - name: jobId
-          in: path
-          description: Job id of execution result to be requested
-          required: true
-          type: string
       responses:
         '200':
-          description: 'Successful response, job result is deleted.'
-          schema:
-            $ref:  '#/definitions/JobStatusResponse'
+          description: 'Successful response, a User queue is stopped'
         '400':
-          description: Environment evaluation error
+          description: Error stopping the database user queue entry
           schema:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-        '404':
-          description: Database not available/unknown
-  /file/browse:
+  /adabas/env:
     get:
-      tags:
-        - Browser
-      description: Retrieves a list of Browseable locations
-      operationId: browseList
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of Adabas version installations used
       consumes:
         - application/json
       produces:
         - application/json
+      tags:
+        - OnlineOffline
+      operationId: getDatabasesInstallation
       responses:
         '200':
           description: 'Successful response, with list of known databases.'
           schema:
-            $ref: '#/definitions/Directories'
+            $ref: '#/definitions/AdabasEnvironment'
         '400':
-          description: Environment evaluation error
+          description: Database error evaluating list
           schema:
             $ref: '#/definitions/Error'
         '401':
           description: Authorization error
-        '404':
-          description: Database not available/unknown
-  '/file/browse/{location}':
+  '/binary/db/{dbid}/{file}/{isn}/{field}':
     get:
-      tags:
-        - Browser
-      description: Retrieves a list of files in the defined location.
-      operationId: browse
       security:
         - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a lob of a specific ISN of an field
       consumes:
         - application/json
-      produces:
-        - application/json
-      parameters:
-        - $ref: '#/parameters/locationParam'
-        - $ref: '#/parameters/fileReferenceParam'
-      responses:
-        '200':
-          description: 'Successful response, with list of known databases.'
-          schema:
-            $ref: '#/definitions/FileLocation'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Database not available/unknown
-  '/file/access/{location}':
-    get:
-      tags:
-        - Browser
-      description: Download a file out of file location
-      operationId: downloadFile
-      security:
-        - BasicAuth: []
       produces:
         - application/octet-stream
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getLob
+      parameters:
+        - type: integer
+          description: Database id
+          name: dbid
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - type: integer
+          description: Database file
+          name: file
+          in: path
+          required: true
+        - type: string
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - type: string
+          description: Specific the data MIME type
+          name: mimetype
+          in: query
+        - $ref: '#/parameters/searchParam'
+      responses:
+        '200':
+          description: 'Successful response, retrieve the field information.'
+          schema:
+            type: file
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Set a lob at a specific ISN of an field in a Map
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      tags:
+        - MapDatabaseAccess
+      operationId: updateLob
+      parameters:
+        - type: integer
+          description: Database id
+          name: dbid
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - type: integer
+          description: Database file
+          name: file
+          in: path
+          required: true
+        - type: integer
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - type: file
+          description: Upload raw binary content of field
+          name: uploadLob
+          in: formData
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, database record is updated.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+  '/binary/map/{name}/{isn}/{field}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a lob of a specific ISN of an field in a Map
+      produces:
+        - application/octet-stream
+      tags:
+        - MapDatabaseAccess
+      operationId: getLobByMap
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - type: string
+          description: Specific the data MIME type
+          name: mimetype
+          in: query
+        - $ref: '#/parameters/searchParam'
+      responses:
+        '200':
+          description: 'Successful response, retrieve the field information.'
+          schema:
+            type: file
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Set a lob at a specific ISN of an field in a Map
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      tags:
+        - MapDatabaseAccess
+      operationId: updateLobByMap
+      parameters:
+        - type: string
+          description: Map name
+          name: name
+          in: path
+          required: true
+        - type: integer
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - type: file
+          description: Upload raw binary content of field
+          name: uploadLob
+          in: formData
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, database record is updated.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+  '/file/access/{location}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Download a file out of file location
+      produces:
+        - application/octet-stream
+      tags:
+        - Browser
+      operationId: downloadFile
       parameters:
         - $ref: '#/parameters/locationParam'
         - $ref: '#/parameters/fileReferenceParam'
@@ -1695,18 +1677,30 @@ paths:
           description: Authorization error
         '404':
           description: Location not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
     put:
-      tags:
-        - Browser
-      description: Create a new directory
-      operationId: createDirectory
       security:
         - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Create a new directory
       consumes:
-        - application/octet-stream
+#        - multipart/form-data
+        - application/json
+        - plain/text
+      produces:
+        - application/json
+      tags:
+        - Browser
+      operationId: createDirectory
       parameters:
         - $ref: '#/parameters/locationParam'
         - $ref: '#/parameters/fileReferenceParam'
+#        - type: file
+#          description: Upload file
+#          name: uploadFile
+#          in: formData
+#          required: false
       responses:
         '200':
           description: 'Successful response, if the directory is created.'
@@ -1720,48 +1714,30 @@ paths:
           description: Authorization error
         '404':
           description: Location not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
     post:
-      tags:
-        - Browser
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
       description: Upload a new file to the given location
-      operationId: uploadFile
-      security:
-        - BasicAuth: []
       consumes:
+        - application/octet-stream
         - multipart/form-data
-      parameters:
-        - $ref: '#/parameters/locationParam'
-        - $ref: '#/parameters/fileReferenceParam'
-        - name: uploadFile
-          in: formData
-          description: Upload file
-          required: true
-          type: file
-      responses:
-        '200':
-          description: 'Successful response, with download binary file.'
-          schema:
-            $ref: '#/definitions/StatusResponse'
-        '400':
-          description: Environment evaluation error
-          schema:
-            $ref: '#/definitions/Error'
-        '401':
-          description: Authorization error
-        '404':
-          description: Location not available/unknown
-    delete:
+      produces:
+        - application/json
+        - text/plain
       tags:
         - Browser
-      description: Delete the file on the given location
-      operationId: deleteFileLocation
-      security:
-        - BasicAuth: []
-      produces:
-        - application/octet-stream
+      operationId: uploadFile
       parameters:
         - $ref: '#/parameters/locationParam'
         - $ref: '#/parameters/fileReferenceParam'
+        - type: file
+          description: Upload file
+          name: uploadFile
+          in: formData
+          required: true
       responses:
         '200':
           description: 'Successful response, with download binary file.'
@@ -1775,43 +1751,1548 @@ paths:
           description: Authorization error
         '404':
           description: Location not available/unknown
-parameters:
-  locationParam:
-    name: location
-    in: path
-    description: Identifier of the file location
-    required: true
-    type: string
-  fileReferenceParam:
-    name: file
-    in: query
-    description: Identifier of the file location
-    required: true
-    type: string
-  dbidParam:
-    name: dbid
-    in: path
-    description: Database ID
-    required: true
-    type: number
-  fileParam:
-    name: file
-    in: path
-    description: File number
-    required: true
-    type: number
-  rfc3339Param:
-    name: rfc3339
-    in: query
-    description: Return time format in RFC3339
-    required: false
-    type: boolean
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete the file on the given location
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Browser
+      operationId: deleteFileLocation
+      parameters:
+        - $ref: '#/parameters/locationParam'
+        - $ref: '#/parameters/fileReferenceParam'
+      responses:
+        '200':
+          description: 'Successful response, if delete of file done.'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Location not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  /file/browse:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of Browseable locations
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Browser
+      operationId: browseList
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/Directories'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/file/browse/{location}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of files in the defined location.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Browser
+      operationId: browse
+      parameters:
+        - $ref: '#/parameters/locationParam'
+        - $ref: '#/parameters/fileReferenceParam'
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/FileLocation'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/image/db/{dbid}/{file}/{isn}/{field}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a field of a specific ISN of a Map definition
+      produces:
+        - image/jpeg
+        - image/gif
+        - image/png
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getImage
+      parameters:
+        - type: integer
+          description: Database id
+          name: dbid
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - type: integer
+          description: Database file
+          name: file
+          in: path
+          required: true
+        - type: integer
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - $ref: '#/parameters/searchParam'
+      responses:
+        '200':
+          description: 'Successful response, retrieve the field information.'
+          schema:
+            type: file
+        '401':
+          description: Unauthorized access
+          headers:
+            WWW_Authenticate:
+              type: string
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+  '/image/map/{name}/{isn}/{field}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a field of a specific ISN of a Map definition
+      produces:
+        - image/jpeg
+        - image/gif
+        - image/png
+      tags:
+        - MapDatabaseAccess
+      operationId: getImageByMap
+      parameters:
+        - type: string
+          description: Map name
+          name: name
+          in: path
+          required: true
+        - type: string
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - $ref: '#/parameters/searchParam'
+      responses:
+        '200':
+          description: 'Successful response, retrieve the field information.'
+          schema:
+            type: file
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Upload a LOB date to the given database field
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      produces:
+        - application/json
+        - text/plain
+      tags:
+        - MapDatabaseAccess
+      operationId: uploadImage
+      parameters:
+        - type: string
+          description: Map name
+          name: name
+          in: path
+          required: true
+        - type: integer
+          description: Specific ISN number
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific the field to be
+          name: field
+          in: path
+          required: true
+        - type: file
+          description: Upload image
+          name: uploadImage
+          in: formData
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with upload binary data.'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Location not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  /rest/db:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]  
+      description: Retrieves a list of known databases.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getOnlineDatabases
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/OnlineDatabases'
+          headers:
+            X-Rest-Token:
+              type: string
+            WWW_Authenticate:
+              type: string
+          examples:
+            application/json:
+              Databases:
+                - url: '23(tcpip://pctkn7:0)'
+                - url: '24(tcpip://pctkn7:0)'
+                - url: '25(tcpip://pctkn7:0)'
+              Databases:
+                - url: '23(tcpip://pctkn7:0)'
+                - url: '24(tcpip://pctkn7:0)'
+                - url: '25(tcpip://pctkn7:0)'
+        '404':
+          description: Error requesting database list.
+          schema:
+            $ref: '#/definitions/Error'
+        default:
+          description: Unexpected error
+          schema:
+            $ref: '#/definitions/Error'  
+  '/rest/db/{dbid}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a list of files contained in the given database
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getFiles
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with a list of known files in the database'
+          schema:
+            $ref: '#/definitions/DbFiles'
+          examples:
+            Files:
+              File:
+                - 8
+                - 9
+                - 11
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Error retrieving database list
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/db/{dbid}/{file}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Get database records of a given database and file
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getClassicRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - $ref: '#/parameters/fieldsParam'
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with a representation of the data.'
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: The requested data was not found.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Update record data
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: putClassicRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, database record is updated.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Could not update database record.
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Insert database record
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: postClassicRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, database record inserted.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Error inserting database record.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/db/{dbid}/{file}/{isn}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieve database record(s) of a given ISN
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getClassicIsnRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: number
+          description: ISN number or "*" for all records
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - $ref: '#/parameters/fieldsParam'
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: >-
+            Successful response, with a representation of the database record of
+            given ISN.
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: The requested database record cannot be returned.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Update database record of a given ISN.
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: putClassicIsnRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: number
+          description: ISN number to be updated
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, database record updated.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: The requested database record could not be updated.
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Insert database record at given ISN.
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: postClassicIsnRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: number
+          description: ISN number to be inserted
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, database record inserted.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Insert could not be done.
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Delete a specific ISN
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: deleteClassicIsnRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: number
+          description: ISN of the record to be deleted
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, the record is deleted.'
+          schema:
+            $ref: '#/definitions/Status'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: Delete of the request was not finished.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/db/{dbid}/{file}/{isn}/{field}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieve a specific database record field data.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getClassicIsnFieldRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - type: string
+          description: ISN number or "*" for all records
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Field to be read
+          name: field
+          in: path
+          required: true
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with database data of the request field.'
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: The requested database record field could not be returned.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Update database record field
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: putClassicIsnFieldRecordData
+      parameters:
+        - type: number
+          description: Database ID
+          name: dbid
+          in: path
+          required: true
+        - type: number
+          description: File number
+          name: file
+          in: path
+          required: true
+        - type: number
+          description: ISN number to be updated
+          name: isn
+          in: path
+          required: true
+        - type: number
+          description: Field to be updated
+          name: field
+          in: path
+          required: true
+        - type: string
+          description: Remote node reference
+          name: reference
+          in: query
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, database record updated.'
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: The requested data was forbidden.
+        '404':
+          description: The requested database record could not be  updated
+          schema:
+            $ref: '#/definitions/Error'
+  /rest/map:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a list of available maps
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: getMaps
+      responses:
+        '200':
+          description: 'Successful response, with the list of available maps.'
+          schema:
+            $ref: '#/definitions/Maps'
+          examples:
+            application/json:
+              Maps:
+                - EMPLOYEE-FDT
+                - EMPLOYEES-NAT
+                - EMPLOYEES-NAT-DDM
+        '404':
+          description: Error requesting the list of maps.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/map/{name}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves all records of a Map definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: getMapRecords
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - $ref: '#/parameters/fieldsParam'
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with a number of records of the map.'
+          schema:
+            $ref: '#/definitions/Response'
+        '404':
+          description: The requested map was not found.
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Update send records into a Map definition
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: updateMapRecords
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, send record is stored.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: Error storing the record.
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Store send records into Map definition
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: insertMapRecords
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, send record is stored.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: Error storing the record.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/map/{name}/{isn}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves all records of specific ISN in a Map definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: getIsnSpecificRecord
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number or "*" for all ISN
+          name: isn
+          in: path
+          required: true
+        - $ref: '#/parameters/fieldsParam'
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, read of the data.'
+          schema:
+            $ref: '#/definitions/Response'
+        '404':
+          description: Error reading a specific ISN
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Update a record of a Map definition
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: putIsnSpecificRecord
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number or "*" for all ISN
+          name: isn
+          in: path
+          required: true
+        - $ref: '#/parameters/fieldsParam'
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, Update a specific record.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: The requested update cannot be done.
+          schema:
+            $ref: '#/definitions/Error'
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Insert a new records of a Map definition
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: postIsnSpecificRecord
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number or "*" for all ISN
+          name: isn
+          in: path
+          required: true
+        - description: Data content
+          name: data
+          in: body
+          required: true
+          schema:
+            $ref: '#/definitions/Records'
+      responses:
+        '200':
+          description: 'Successful response, new record is inserted.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '404':
+          description: The new record could not be inserted.
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Delete a record of Map definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: deleteIsnSpecificRecord
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number or "*" for all ISN
+          name: isn
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, map record deleted.'
+          schema:
+            $ref: '#/definitions/Response'
+        '404':
+          description: Error deleting the record.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/map/{name}/{isn}/{field}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves a field of a specific ISN of a Map definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: getMapRecordsFields
+      parameters:
+        - $ref: '#/parameters/mapParam'
+        - type: string
+          description: Specific ISN number or "*" for all ISN
+          name: isn
+          in: path
+          required: true
+        - type: string
+          description: Specific a comma separated list of fields to be part of the result record
+          name: field
+          in: path
+          required: true
+        - $ref: '#/parameters/startParam'
+        - $ref: '#/parameters/limitParam'
+        - $ref: '#/parameters/sortParam'
+        - $ref: '#/parameters/searchParam'
+        - $ref: '#/parameters/compactParam'
+        - $ref: '#/parameters/flattenParam'
+        - $ref: '#/parameters/descriptorParam'
+        - type: boolean
+          description: Use XML notation namespace
+          name: xmlnotation
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, retrieve the field information.'
+          schema:
+            $ref: '#/definitions/Response'
+        '404':
+          description: Could not read the specified field.
+          schema:
+            $ref: '#/definitions/Error'
+  '/rest/metadata/map/{name}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves metadata of a Map definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: getMapMetadata
+      parameters:
+        - $ref: '#/parameters/mapParam'
+      responses:
+        '200':
+          description: 'Successful response, retrieve the map metadata.'
+          schema:
+            $ref: '#/definitions/mapping'
+        '404':
+          description: Could not read or don't found the specified map metadata.
+          schema:
+            $ref: '#/definitions/Error'
+  /scheduler/job:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a list of databases known by Adabas Interface.
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobs
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/JobsList'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Create a new Job database
+      consumes:
+        - application/json
+        - text/plain
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: postJob
+      parameters:
+        - name: job
+          in: body
+          schema:
+            $ref: '#/definitions/JobParameter'
+      responses:
+        '200':
+          description: 'Successful response, with new Adabas databases created'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Error creating Adabas database
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/job/{jobName}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a job definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJob
+      parameters:
+        - type: string
+          description: Job Name to be requested
+          name: jobName
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/JobParameter'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Schedule a already defined Job
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: scheduleJob
+      parameters:
+        - type: string
+          description: Job Name to be requested
+          name: jobName
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with new Adabas databases created '
+          schema:
+            $ref: '#/definitions/JobStatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Error creating Adabas database
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete a job definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: deleteJob
+      parameters:
+        - type: string
+          description: Job Name to be requested
+          name: jobName
+          in: path
+          required: true
+      responses:
+        '200':
+          description: Successfully delete the job.
+          schema:
+            $ref: '#/definitions/JobStatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Job not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/job/{jobName}/full':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a full job definition
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobFull
+      parameters:
+        - type: string
+          description: Job Name to be requested
+          name: jobName
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/JobDefinition'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/job/{jobName}/result':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves all job results
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobResults
+      parameters:
+        - type: string
+          description: Job name to be requested
+          name: jobName
+          in: path
+          required: true
+        - $ref: '#/parameters/rfc3339Param'
+      responses:
+        '200':
+          description: 'Successful response, with list of known databases.'
+          schema:
+            $ref: '#/definitions/JobResult'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available or unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/job/{jobName}/result/{jobId}':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a specific job result
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobResult
+      parameters:
+        - type: string
+          description: Job name to be requested
+          name: jobName
+          in: path
+          required: true
+        - type: string
+          description: Job id of execution result to be requested
+          name: jobId
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with a specific job id.'
+          schema:
+            $ref: '#/definitions/JobResult'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+    delete:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Delete a specific job result
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: deleteJobResult
+      parameters:
+        - type: string
+          description: Job name to be requested
+          name: jobName
+          in: path
+          required: true
+        - type: string
+          description: Job id of execution result to be requested
+          name: jobId
+          in: path
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, job result is deleted.'
+          schema:
+            $ref: '#/definitions/JobStatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/execution':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a specific job result
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobExecutionResultRange
+      parameters:
+        - type: string
+          description: Start time from
+          name: from
+          in: query
+        - type: string
+          description: End time to
+          name: to
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with a specific job id.'
+          schema:
+            $ref: '#/definitions/JobResult'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
+  '/scheduler/results':
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Retrieves a specific job result
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Scheduler
+      operationId: getJobExecutionResult
+      parameters:
+        - type: string
+          description: Start time from
+          name: from
+          in: query
+        - type: string
+          description: End time to
+          name: to
+          in: query
+      responses:
+        '200':
+          description: 'Successful response, with a specific job id.'
+          schema:
+            $ref: '#/definitions/JobResult'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '404':
+          description: Database not available/unknown
+          schema:
+            $ref: '#/definitions/Error'
 definitions:
-  Environments:
+  AuthorizationToken:
     type: object
     properties:
-      Environment:
+      token:
+        type: string
+  principal:
+    type: object 
+    properties: 
+      UUID: 
+        type: string
+      name: 
+        type: string
+      roles:
+        type: array 
+        items: 
+          type: string
+      session:
         type: object
+      adabas:
+        type: object
+  ActivityStats:
+    type: object
+    properties:
+      Statistics:
+        type: object
+        properties:
+          BPHitRate:
+            type: number
+          BufferPoolIO:
+            type: integer
+          FPHitRate:
+            type: integer
+          PlogWrites:
+            type: integer
+          ThbDWPOverflow:
+            type: integer
+          ThbEtSync:
+            type: integer
+          ThbWaitIsn:
+            type: integer
+          ThbWaitUQContext:
+            type: integer
+          WPSpaceWaitCurrent:
+            type: integer
+          WorkReads:
+            type: integer
+          WorkWrites:
+            type: integer
+          WpSpaceWaitTotal:
+            type: integer
   AdabasEnvironment:
     type: object
     properties:
@@ -1827,453 +3308,94 @@ definitions:
   AdabasInstallation:
     type: object
     properties:
-      SAG:
-        type: string
       ADAPROGDIR:
         type: string
-      Version:
+      SAG:
         type: string
       StructureLevel:
         type: number
-  ContainerFst:
-    type: object
-    properties:
-      Container:
-        type: object
-        properties:
-          ContainerList:
-            type: array
-            items:
-              $ref: '#/definitions/ContainerInfo'
-          FreeSpaceTable:
-            type: array
-            items:
-              $ref: '#/definitions/FreeSpaceTable'
-  ContainerInfo:
-    type: object
-    properties:
-      Type:
-        type: string
-      DeviceType:
-        type: string
-      ContainerNumber:
-        type: integer
-      BlockSize:
-        type: integer
-      BlockUnit:
-        type: string
-      Size:
-        type: integer
-      SizeUnit:
-        type: string
-      FirstExtentRabn:
-        type: integer
-      LastExtentRabn:
-        type: integer
-      FirstUnusedRabn:
-        type: integer
-      Path:
-        type: string
-  FreeSpaceTable:
-    type: object
-    properties:
-      Type:
-        type: string
-      BlockSize:
-        type: integer
-      FirstRABN:
-        type: integer
-      LastRABN:
-        type: integer
-  Container:
-    type: object
-    properties:
-      Path:
-        type: string
-      BlockSize:
-        type: string
-      ContainerSize:
-        type: string
-  DatabaseStatus:
-    properties:
-      Database:
-        type: object
-        properties:
-          Dbid:
-            type: integer
-          Status:
-            type: string
-  Database:
-    properties:
-      SecurityFile:
-        type: integer
-      Dbid:
-        type: integer
-      ContainerList:
-        type: array
-        items:
-          $ref: '#/definitions/Container'
-      Name:
-        type: string
-      CheckpointFile:
-        type: integer
-      UserFile:
-        type: integer
-      LoadDemo:
-        type: boolean
-  DatabaseInformation:
-    properties:
-      Dbid:
-        type: integer
-      Active:
-        type: boolean
-      Name:
-        type: string
-      ServiceVersion:
-        type: string
       Version:
         type: string
-      StructureLevel:
-        type: integer
-  Databases:
-    type: object
-    description: Database entry in database list
-    properties:
-      Database:
-        type: array
-        items:
-          $ref: '#/definitions/DatabaseInformation'
-  Files:
+  BufferPoolStats:
     type: object
     properties:
-      Files:
-        type: array
-        items:
-          $ref: '#/definitions/FileInfo'
-  FileInfo:
-    type: object
-    properties:
-      FileNr:
-        type: integer
-      Status:
-        type: string
-      IsLobRoot:
-        type: integer
-      IsLob:
-        type: integer
-      RecordCount:
-        type: integer
-      Name:
-        type: string
-  Fcb:
-    type: object
-    properties:
-      File:
+      Statistics:
         type: object
         properties:
-          StructureLevel:
+          AllocCurrent:
             type: integer
-          Name:
-            type: string
-          Number:
+          AllocHighwater:
             type: integer
-          HIRabn:
+          AllocInternal:
             type: integer
-          UIRabn:
+          AllocWorkpool:
             type: integer
-          NIRabn:
+          FlushesFree:
             type: integer
-          LastModification:
-            type: string
-          Flags:
-            type: string
-          MaxRecordLength:
+            x-omitempty: false
+          FlushesTotal:
             type: integer
-          HighestIndexLevel:
+            x-omitempty: false
+          IOHitRateHigh:
             type: integer
-          SecurityInfo:
+            x-omitempty: false
+          IOHitRateLow:
             type: integer
-          TotalAcBlocks:
+            x-omitempty: false
+          IOLogicalReads:
             type: integer
-          TotalDsBlocks:
+            x-omitempty: false
+          IOPhysicalWrites:
             type: integer
-          TotalNiBlocks:
+            x-omitempty: false
+          IOPhysicalsReads:
             type: integer
-          TotalUiBlocks:
+            x-omitempty: false
+          Modified:
             type: integer
-          LowIsn:
+            x-omitempty: false
+          RabnsAsso:
             type: integer
-          MaxIsn:
+            x-omitempty: false
+          RabnsData:
             type: integer
-          TopIsn:
+            x-omitempty: false
+          RabnsNucSort:
             type: integer
-          MaxHyperIsn:
+            x-omitempty: false
+          RabnsNucTmp:
             type: integer
-          RotatingIsn:
+            x-omitempty: false
+          RabnsWork:
             type: integer
-          IsnCnt:
+            x-omitempty: false
+          Size:
             type: integer
-          RotatingRabnDSST:
+          WriteLimit:
             type: integer
-          ResidualCountDSST:
-            type: integer
-          LastUsedDataRABN:
-            type: integer
-          LastDsExtendIndex:
-            type: integer
-          LastNiExtendIndex:
-            type: integer
-          LastUiExtendIndex:
-            type: integer
-          PaddingFactorData:
-            type: integer
-          PaddingFactorAsso:
-            type: integer
-          FdtLength:
-            type: integer
-          FdtStartRABN:
-            type: integer
-          RecordCount:
-            type: integer
-          AdamDsBlocks:
-            type: integer
-          AdamParams:
-            type: integer
-          AdamKey:
-            type: string
-          FDTOffsetAdam:
-            type: integer
-          AdamByteKeys:
-            type: array
-            items:
-              type: integer
-          FirstRABNUiIndexReusage:
-            type: integer
-          FirstRABNNiIndexReusage:
-            type: integer
-          Owner:
-            type: string
-          AlphaEncoding:
-            type: integer
-          LobFile:
-            type: integer
-          RootFile:
-            type: integer
-          MaxMuOccurence:
-            type: integer
-          ACextents:
-            type: array
-            items:
-              $ref: '#/definitions/FcbExtents'
-          DSextents:
-            type: array
-            items:
-              $ref: '#/definitions/FcbExtents'
-          NIextents:
-            type: array
-            items:
-              $ref: '#/definitions/FcbExtents'
-          UIextents:
-            type: array
-            items:
-              $ref: '#/definitions/FcbExtents'
-  FcbExtents:
-    type: object
-    properties:
-      FirstRabn:
-        type: integer
-      LastRabn:
-        type: integer
-      FreeOrIsn:
-        type: integer
-      LenOrIsns:
-        type: integer
-      ShiftCount:
-        type: integer
-  DatabaseGcb:
-    type: object
-    properties:
-      Gcb:
-        type: object
-        properties:
-          Architecture:
-            type: string
-          StructureLevel:
-            type: string
-          Flags:
-            type: string
-          MaxFileNumber:
-            type: integer
-          MaxFileNumberLoaded:
-            type: integer
-          CurrentPLOGNumber:
-            type: integer
-          CurrentCLOGNumber:
-            type: integer
-          Date:
-            type: string
-            format: date-time
-          Name:
-            type: string
-          Dbid:
-            type: integer
-          ACRABNLength:
-            type: integer
-          SecurityFile:
-            type: integer
-          CheckpointFile:
-            type: integer
-          ETDataFile:
-            type: integer
-          ReplicationMetadataFile:
-            type: integer
-          ReplicationTransitionFile:
-            type: integer
-          ReplicationCommandFile:
-            type: integer
-          RBACSystemFile:
-            type: integer
-          ASSO1BlockSize:
-            type: integer
-          ExtentRABNASSOArray:
-            type: array
-            items:
-              type: integer
-          ExtentRABNDSSTArray:
-            type: array
-            items:
-              type: integer
-          ExtentRABNDATAArray:
-            type: array
-            items:
-              type: integer
-          WORKExtents:
-            type: array
-            items:
-              $ref: '#/definitions/WORKExtents'
-          WORKPart1Size:
-            type: integer
-          PLOGExtent:
-            type: integer
-          PLOGCount:
-            type: integer
-          WideEncoding:
-            type: integer
-          AlphaEncoding:
-            type: integer
-          TimeStampReplication:
-            type: string
-            format: date-time
-          TimeStampLog:
-            type: string
-            format: date-time
-  WORKExtents:
-    type: object
-    properties:
-      Id:
-        type: string
-      DeviceType:
-        type: string
-      Number:
-        type: integer
-      BlockSize:
-        type: integer
-      RABNfirst:
-        type: integer
-      RABNlast:
-        type: integer
-      RABNunused:
-        type: integer
-  DatabaseCheckpoints:
-    type: object
-    properties:
-      Checkpoints:
-        type: array
-        items:
-          $ref: '#/definitions/Checkpoint'
   Checkpoint:
     type: object
     properties:
-      Name:
-        type: string
-      Session:
-        type: integer
       Date:
         type: string
       Details:
         type: string
-  UserQueue:
+      Name:
+        type: string
+      Session:
+        type: integer
+  CommandItems:
     type: object
+    required:
+      - CommandCount
+      - CommandName
     properties:
-      UserQueue:
-        type: object
-        properties:
-          UserQueueEntry:
-            type: array
-            items:
-              $ref: '#/definitions/UserQueueEntry'
-  UserQueueDetail:
-    type: object
-    properties:
-      UserQueueDetail:
-        type: object
-        properties:
-          DetailEntry:
-            type: array
-            items:
-              $ref: '#/definitions/UserQueueEntry'
-      StartSession:
-        type: string
-        format: date-time
-      StartTransaction:
-        type: string
-        format: date-time
-      LastActivity:
-        type: string
-        format: date-time
-      TTLimit:
-        type: integer
-      TNALimit:
-        type: integer
-      ISN_Lists:
-        type: integer
-      ISN_Hold:
-        type: integer
-      files:
-        type: array
-        items:
-          type: integer
       CommandCount:
         type: integer
-      TransactionCount:
-        type: integer
-      UserEncoding:
-        type: integer
-  UserQueueEntry:
-    type: object
-    properties:
-      User:
+        x-isnullable: false
+      CommandName:
         type: string
-      Uid:
-        $ref: '#/definitions/UserInformation'
-      UqId:
-        type: integer
-      Flags:
-        type: string
-      EtFlags:
-        type: string
-  UserInformation:
-    type: object
-    properties:
-      Id:
-        type: integer
-      Node:
-        type: string
-      Terminal:
-        type: string
-      Timestamp:
-        type: string
-        format: date-time
+        x-isnullable: false
   CommandQueue:
     type: object
     properties:
@@ -2291,24 +3413,721 @@ definitions:
   CommandQueueEntry:
     type: object
     properties:
-      CommandUser:
-        type: string
-      User:
-        $ref: '#/definitions/UserInformation'
-      CommId:
+      APU:
         type: integer
-      Flags:
-        type: string
-      File:
+        x-omitempty: false
+      CommId:
         type: integer
       CommandCode:
         type: string
+      CommandUser:
+        type: string
       EtFlags:
         type: string
+        x-omitempty: false
+      File:
+        type: integer
+        x-omitempty: false
+      Flags:
+        type: string
+        x-omitempty: false
       Isn:
         type: integer
-      APU:
+        x-omitempty: false
+      User:
+        $ref: '#/definitions/UserInformation'
+  CommandStats:
+    type: object
+    properties:
+      CommandStats:
+        type: object
+        properties:
+          Commands:
+            type: array
+            items:
+              $ref: '#/definitions/CommandItems'
+  Container:
+    type: object
+    properties:
+      BlockSize:
+        type: string
+      ContainerSize:
+        type: string
+      Path:
+        type: string
+  ContainerFst:
+    type: object
+    properties:
+      Container:
+        type: object
+        properties:
+          ContainerList:
+            type: array
+            items:
+              $ref: '#/definitions/ContainerInfo'
+          FreeSpaceTable:
+            type: array
+            items:
+              $ref: '#/definitions/FreeSpaceTable'
+  ContainerInfo:
+    type: object
+    properties:
+      BlockSize:
         type: integer
+      BlockUnit:
+        type: string
+      ContainerNumber:
+        type: integer
+      DeviceType:
+        type: string
+      FirstExtentRabn:
+        type: integer
+      FirstUnusedRabn:
+        type: integer
+      LastExtentRabn:
+        type: integer
+      Path:
+        type: string
+      Size:
+        type: integer
+        x-isnullable: false
+        x-omitempty: false
+      SizeUnit:
+        type: string
+      Type:
+        type: string
+  Data:
+    type: object
+  DataVersions:
+    type: object
+    properties:
+      Version:
+        description: Core component version
+        type: string
+  Database:
+    properties:
+      CheckpointFile:
+        type: integer
+      ContainerList:
+        type: array
+        items:
+          $ref: '#/definitions/Container'
+      Dbid:
+        type: integer
+      LoadDemo:
+        type: boolean
+      Name:
+        type: string
+      SecurityFile:
+        type: integer
+      UserFile:
+        type: integer
+  DatabaseCheckpoints:
+    type: object
+    properties:
+      Checkpoints:
+        type: array
+        items:
+          $ref: '#/definitions/Checkpoint'
+  DatabaseGcb:
+    type: object
+    properties:
+      Gcb:
+        type: object
+        properties:
+          ACRABNLength:
+            type: integer
+          ASSO1BlockSize:
+            type: integer
+          AlphaEncoding:
+            type: integer
+          Architecture:
+            type: string
+          CheckpointFile:
+            type: integer
+          CurrentCLOGNumber:
+            type: integer
+          CurrentPLOGNumber:
+            type: integer
+          Date:
+            type: string
+            format: date-time
+          Dbid:
+            type: integer
+          ETDataFile:
+            type: integer
+          ExtentRABNASSOArray:
+            type: array
+            items:
+              type: integer
+          ExtentRABNDATAArray:
+            type: array
+            items:
+              type: integer
+          ExtentRABNDSSTArray:
+            type: array
+            items:
+              type: integer
+          Flags:
+            type: string
+          MaxFileNumber:
+            type: integer
+          MaxFileNumberLoaded:
+            type: integer
+          Name:
+            type: string
+          PLOGCount:
+            type: integer
+          PLOGExtent:
+            type: integer
+          RBACSystemFile:
+            type: integer
+          ReplicationCommandFile:
+            type: integer
+          ReplicationMetadataFile:
+            type: integer
+          ReplicationTransitionFile:
+            type: integer
+          SecurityFile:
+            type: integer
+          StructureLevel:
+            type: string
+          TimeStampLog:
+            type: string
+            format: date-time
+          TimeStampReplication:
+            type: string
+            format: date-time
+          WORKExtents:
+            type: array
+            items:
+              $ref: '#/definitions/WORKExtents'
+          WORKPart1Size:
+            type: integer
+          WideEncoding:
+            type: integer
+  DatabaseInformation:
+    properties:
+      Active:
+        type: boolean
+      Dbid:
+        type: integer
+      Name:
+        type: string
+      ServiceVersion:
+        type: string
+      StructureLevel:
+        type: integer
+      Version:
+        type: string
+  DatabaseStatus:
+    properties:
+      Database:
+        type: object
+        properties:
+          Dbid:
+            type: integer
+          Status:
+            type: string
+  Databases:
+    description: Database entry in database list
+    type: object
+    properties:
+      Database:
+        type: array
+        items:
+          $ref: '#/definitions/DatabaseInformation'
+  DbFiles:
+    type: object
+    title: Files
+    properties:
+      Files:
+        type: array
+        items:
+          type: integer
+  Directories:
+    type: object
+    properties:
+      Directories:
+        type: array
+        items:
+          $ref: '#/definitions/Directory'
+      system:
+        type: string
+  Directory:
+    type: object
+    properties:
+      Location:
+        type: string
+      Name:
+        type: string
+  Environments:
+    type: object
+    properties:
+      Environment:
+        type: object
+  Error:
+    type: object
+    properties:
+      Error:
+        type: object
+        properties:
+          code:
+            type: string
+          message:
+            type: string
+  Executions:
+    type: object
+    properties:
+      Database:
+        type: integer
+      Ended:
+        type: string
+        format: date-time
+      ExitCode:
+        type: number
+      Id:
+        type: integer
+      Log:
+        type: string
+      Scheduled:
+        type: string
+        format: date-time
+  Fcb:
+    type: object
+    properties:
+      File:
+        type: object
+        properties:
+          ACextents:
+            type: array
+            items:
+              $ref: '#/definitions/FcbExtents'
+          AdamByteKeys:
+            type: array
+            items:
+              type: integer
+          AdamDsBlocks:
+            type: integer
+          AdamKey:
+            type: string
+          AdamParams:
+            type: integer
+          AlphaEncoding:
+            type: integer
+          DSextents:
+            type: array
+            items:
+              $ref: '#/definitions/FcbExtents'
+          FDTOffsetAdam:
+            type: integer
+          FdtLength:
+            type: integer
+          FdtStartRABN:
+            type: integer
+          FirstRABNNiIndexReusage:
+            type: integer
+          FirstRABNUiIndexReusage:
+            type: integer
+          Flags:
+            type: string
+          HIRabn:
+            type: integer
+          HighestIndexLevel:
+            type: integer
+          IsnCnt:
+            type: integer
+          LastDsExtendIndex:
+            type: integer
+          LastModification:
+            type: string
+          LastNiExtendIndex:
+            type: integer
+          LastUiExtendIndex:
+            type: integer
+          LastUsedDataRABN:
+            type: integer
+          LobFile:
+            type: integer
+          LowIsn:
+            type: integer
+          MaxHyperIsn:
+            type: integer
+          MaxIsn:
+            type: integer
+          MaxMuOccurence:
+            type: integer
+          MaxRecordLength:
+            type: integer
+          NIRabn:
+            type: integer
+          NIextents:
+            type: array
+            items:
+              $ref: '#/definitions/FcbExtents'
+          Name:
+            type: string
+          Number:
+            type: integer
+          Owner:
+            type: string
+          PaddingFactorAsso:
+            type: integer
+          PaddingFactorData:
+            type: integer
+          RecordCount:
+            type: integer
+          ResidualCountDSST:
+            type: integer
+          RootFile:
+            type: integer
+          RotatingIsn:
+            type: integer
+          RotatingRabnDSST:
+            type: integer
+          SecurityInfo:
+            type: integer
+          StructureLevel:
+            type: integer
+          TopIsn:
+            type: integer
+          TotalAcBlocks:
+            type: integer
+          TotalDsBlocks:
+            type: integer
+          TotalNiBlocks:
+            type: integer
+          TotalUiBlocks:
+            type: integer
+          UIRabn:
+            type: integer
+          UIextents:
+            type: array
+            items:
+              $ref: '#/definitions/FcbExtents'
+  FcbExtents:
+    type: object
+    properties:
+      FirstRabn:
+        type: integer
+      FreeOrIsn:
+        type: integer
+      LastRabn:
+        type: integer
+      LenOrIsns:
+        type: integer
+      ShiftCount:
+        type: integer
+  Fdt:
+    type: object
+    properties:
+      FDT:
+        type: object
+        properties:
+          Descriptors:
+            type: array
+            items:
+              $ref: '#/definitions/Field'
+          Fields:
+            type: array
+            items:
+              $ref: '#/definitions/Field'
+          Referentials:
+            type: array
+            items:
+              $ref: '#/definitions/Field'
+          Time:
+            type: string
+            format: date-time
+  FduFdt:
+    type: object
+    required:
+      - fduOptions
+      - fdtDefinition
+    properties:
+      fdtDefinition:
+        type: string
+      fduOptions:
+        type: object
+        properties:
+          fduACrabn:
+            type: integer
+          fduAdamByteKey:
+            type: string
+          fduAdamDsBlocks:
+            type: integer
+          fduAdamKey:
+            type: integer
+          fduAdamOffset:
+            type: integer
+          fduAssoPfac:
+            type: integer
+          fduBlocksizeAC:
+            type: integer
+          fduBlocksizeDS:
+            type: integer
+          fduBlocksizeNI:
+            type: integer
+          fduBlocksizeUI:
+            type: integer
+          fduCipher:
+            type: integer
+          fduContiguous:
+            type: integer
+          fduDSMUnitDS:
+            type: integer
+          fduDSMUnitNI:
+            type: integer
+          fduDSMUnitNILong:
+            type: integer
+          fduDSMUnitUI:
+            type: integer
+          fduDSMUnitUILong:
+            type: integer
+          fduDSRabn:
+            type: integer
+          fduDSSize:
+            type: integer
+          fduDataPfac:
+            type: integer
+          fduErase:
+            type: integer
+          fduIsnSize:
+            type: integer
+          fduLobFile:
+            type: integer
+          fduLobFileOption:
+            type: integer
+          fduMaxRecordLength:
+            type: integer
+          fduNISize:
+            type: integer
+          fduName:
+            type: string
+          fduNiBlocksize:
+            type: integer
+          fduNiLongRabn:
+            type: integer
+          fduNiLongSize:
+            type: integer
+          fduNiRabn:
+            type: integer
+          fduNoDsst:
+            type: integer
+          fduNobt:
+            type: integer
+          fduOverflowAdam:
+            type: integer
+          fduPGMRefresh:
+            type: integer
+          fduParamAdam:
+            type: integer
+          fduReuse:
+            type: integer
+          fduSystemFileMaxMu:
+            type: integer
+          fduUIRabn:
+            type: integer
+          fduUISize:
+            type: integer
+          fduUiBlocksize:
+            type: integer
+          fduUiLongRabn:
+            type: integer
+          fduUiLongSize:
+            type: integer
+      fileNumber:
+        type: integer
+      maxIsn:
+        type: integer
+  Field:
+    type: object
+    properties:
+      Flags:
+        type: string
+      Format:
+        type: string
+      Length:
+        type: integer
+      Level:
+        type: integer
+      Name:
+        type: string
+      SubFields:
+        type: array
+        items:
+          $ref: '#/definitions/SubField'
+        x-nullable: true
+      Type:
+        type: string
+  File:
+    type: object
+    properties:
+      Created:
+        type: string
+        format: data-time
+      Modified:
+        type: string
+        format: date-time
+      Name:
+        type: string
+      Size:
+        type: integer
+      Type:
+        type: string
+  FileInfo:
+    type: object
+    properties:
+      FileNr:
+        type: integer
+        x-omitempty: false
+      IsLob:
+        type: integer
+      IsLobRoot:
+        type: integer
+      Name:
+        type: string
+      RecordCount:
+        type: integer
+        x-omitempty: false
+      Status:
+        type: string
+  FileLocation:
+    type: object
+    properties:
+      Content:
+        type: array
+        items:
+          $ref: '#/definitions/File'
+      Location:
+        type: string
+      Reference:
+        type: string
+      system:
+        type: string
+  Files:
+    type: object
+    properties:
+      Files:
+        type: array
+        items:
+          $ref: '#/definitions/FileInfo'
+  FreeSpaceTable:
+    type: object
+    properties:
+      BlockSize:
+        type: integer
+      FirstRABN:
+        type: integer
+      LastRABN:
+        type: integer
+      Type:
+        type: string
+  HWM:
+    type: object
+    properties:
+      HighWater:
+        type: object
+        properties:
+          AttachedBufferHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          AttachedBufferSize:
+            type: integer
+          APUHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          APUSize:
+            type: integer
+          BufferpoolHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          BufferpoolSize:
+            type: integer
+          ClientQueueHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          ClientQueueSize:
+            type: integer
+          CommandQueueHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          CommandQueueSize:
+            type: integer
+          ComplexSearchHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          GroupCommitHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          GroupCommitSize:
+            type: integer
+          HQUserLimitHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          HQUserLimitSize:
+            type: integer
+          HoldQueueHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          HoldQueueSize:
+            type: integer
+          IsnSortHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          LABXHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          LABXSize:
+            type: integer
+          LPXAHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          LPXASize:
+            type: integer
+          LWOHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          LWOSize:
+            type: integer
+          NucleusStartTime:
+            type: string
+            format: date-time
+          ProtectionAreaActiveHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          ProtectionAreaActiveSize:
+            type: integer
+          ProtectionAreaSize:
+            type: integer
+          SortAreaSize:
+            type: integer
+          ThreadSize:
+            type: integer
+          ThreadsHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          TransactionTimeHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          TransactionTimeSize:
+            type: integer
+          UserQueueHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          UserQueueSize:
+            type: integer
+          WorkpoolHighWaterMark:
+            $ref: '#/definitions/HighWaterEntries'
+          WorkpoolSize:
+            type: integer
+  Handler:
+    type: object
+    properties:
+      Name:
+        type: string
+      Version:
+        type: string
+  HighWaterEntries:
+    type: object
+    required:
+      - inuse
+      - high
+      - time
+    properties:
+      high:
+        type: integer
+        x-isnullable: false
+      inuse:
+        type: integer
+        x-isnullable: false
+      time:
+        type: string
+        format: date-time
+        x-isnullable: false
   HoldQueue:
     type: object
     properties:
@@ -2319,130 +4138,265 @@ definitions:
   HoldQueueEntry:
     type: object
     properties:
-      User:
+      File:
+        type: integer
+      Flags:
         type: string
       Hid:
         type: array
         items:
-           $ref: '#/definitions/UserInformation'
+          $ref: '#/definitions/UserInformation'
       HqCommid:
-        type: integer
-      File:
         type: integer
       Isn:
         type: integer
-      Flags:
-        type: string
       Locks:
         type: string
+      User:
+        type: string
+  Job:
+    type: object
+    properties:
+      Description:
+        type: string
+      Environments:
+        type: array
+        items:
+          type: object
+          properties:
+            Parameter:
+              type: string
+      Name:
+        type: string
+      Parameters:
+        type: array
+        items:
+          type: object
+          properties:
+            Parameter:
+              type: string
+      Script:
+        type: string
+      User:
+        type: string
+      Utility:
+        type: string
+  JobDefinition:
+    type: object
+    properties:
+      Executions:
+        type: array
+        items:
+          $ref: '#/definitions/Executions'
+      Job:
+        $ref: '#/definitions/Job'
+      Status:
+        type: string
+  JobDescription:
+    type: object
+    properties:
+      CronSchedule:
+        type: string
+      Description:
+        type: string
+      Environment:
+        type: array
+        items:
+          type: string
+      Name:
+        type: string
+      Parameters:
+        type: array
+        items:
+          type: object
+          properties:
+            Parameter:
+              type: string
+      Script:
+        type: string
+      User:
+        type: string
+      Utility:
+        type: string
+  JobParameter:
+    type: object
+    properties:
+      Job:
+        $ref: '#/definitions/JobDescription'
+  JobResult:
+    type: object
+    properties:
+      JobResult:
+        type: object
+        properties:
+          Description:
+            type: string
+          Ended:
+            type: string
+            format: date-time
+          ExitCode:
+            type: number
+          Id:
+            type: number
+          Log:
+            type: string
+          Name:
+            type: string
+          Scheduled:
+            type: string
+            format: date-time
+          StartedBy:
+            type: string
+          Status:
+            type: string
+  JobStatusResponse:
+    type: object
+    properties:
+      Status:
+        type: object
+        properties:
+          Action:
+            type: string
+          ExecutionId:
+            type: integer
+          Message:
+            type: string
+          Name:
+            type: string
+  JobsList:
+    type: object
+    properties:
+      JobDefinition:
+        type: array
+        items:
+          $ref: '#/definitions/JobDefinition'
+  Map:
+    type: string
+  Maps:
+    description: Maps definition
+    type: object
+    properties:
+      Maps:
+        type: array
+        items:
+          $ref: '#/definitions/Map'
+  MapField:
+    type: object
+    properties:
+          name:
+            type: string
+            properties:
+             format:
+               type: string
+               xml:
+                 attribute: true
+          shortName:
+            type: string
+            properties:
+              format:
+                type: string
+                xml:
+                  attribute: true
+          contentType:
+            type: string
+            properties:
+              format:
+                type: string
+                xml:
+                  attribute: true
+          charset:
+            type: string
+            properties:
+              format:
+                type: string
+                xml:
+                  attribute: true
+          file:
+            type: integer
+            properties:
+              format:
+                type: integer
+                xml:
+                  attribute: true
+          formatType:
+            type: string
+            properties:
+              format:
+                type: string
+                xml:
+                  attribute: true
+          length:
+            type: integer
+            properties:
+              format:
+                type: integer
+                xml:
+                  attribute: true
+          fieldType:
+            type: string
+            properties:
+              format:
+                type: string
+                xml:
+                  attribute: true
+  mappingLocation:
+    type: object
+    properties:
+      target:
+        type: string
+      file:
+        type: integer
+  mapping:
+    type: object
+    properties:
+      Map:
+        type: object
+        properties:
+          name:
+            type: string
+          lastModified:
+            type: string
+            format: date-time
+          isn:
+            type: integer
+          definition:
+              $ref: '#/definitions/mappingLocation'            
+          data:
+              $ref: '#/definitions/mappingLocation'            
+          fields:
+            type: array
+            items:
+              $ref: '#/definitions/MapField'
+      format:
+        xml:
+          namespace: http://www.softwareag.com/adabas/map
+          prefix: map
+  NucleusLog:
+    type: object
+    properties:
+      Log:
+        type: object
+        properties:
+          Log:
+            type: string
+  OnlineDatabase:
+    type: object
+    properties:
+      url:
+        type: string
+  OnlineDatabases:
+    description: Databases definition
+    type: object
+    properties:
+      Databases:
+        type: array
+        items:
+          $ref: '#/definitions/OnlineDatabase'
   Parameter:
     type: object
     properties:
       Parameter:
         type: object
-        properties:
-          AR:
-            type: string
-            x-isnullable: false
-          BI:
-            type: string
-            x-isnullable: false
-          CLOGLAYOUT:
-            type: integer
-            x-isnullable: false
-          PLOG:
-            type: string
-            x-isnullable: false
-          LPXA:
-            type: integer
-            x-isnullable: false
-          BFIO:
-            type: integer
-            x-isnullable: false
-          CLOGBMAX:
-            type: integer
-            x-isnullable: false
-          LOGGING:
-            type: string
-            x-isnullable: false
-          NCL:
-            type: integer
-            x-isnullable: false
-          NISNHQ:
-            type: integer
-            x-isnullable: false
-          NT:
-            type: integer
-            x-isnullable: false
-          NU:
-            type: integer
-            x-isnullable: false
-          OPTIONS:
-            type: string
-            x-isnullable: false
-          TNAA:
-            type: integer
-            x-isnullable: false
-          TNAE:
-            type: integer
-            x-isnullable: false
-          TNAX:
-            type: integer
-            x-isnullable: false
-          TT:
-            type: integer
-            x-isnullable: false
-          USEREXITS:
-            type: string
-            x-isnullable: false
-          RPL_RECORDS:
-            type: integer
-            x-isnullable: false
-          RPL_BLOCKS:
-            type: integer
-            x-isnullable: false
-          RPL_TOTAL:
-            type: integer
-            x-isnullable: false
-          LAB:
-            type: integer
-            x-isnullable: false
-          LABX:
-            type: integer
-            x-isnullable: false
-          LBP:
-            type: integer
-            x-isnullable: false
-          LWP:
-            type: integer
-            x-isnullable: false
-          WRITE_LIMIT:
-            type: integer
-            x-isnullable: false
-          APU_UNITS:
-            type: integer
-            x-isnullable: false
-          APU_WORKERS:
-            type: integer
-            x-isnullable: false
-          APU_RECVS:
-            type: integer
-            x-isnullable: false
-          ADATCP:
-            type: string
-            x-isnullable: false
-          ADATCPPORT:
-            type: integer
-            x-isnullable: false
-          ADATCPRECEIVER:
-            type: integer
-            x-isnullable: false
-          ADATCPATB:
-            type: integer
-            x-isnullable: false
-          ADATCPCONNECTIONS:
-            type: integer
-            x-isnullable: false
         required:
           - AR
           - BI
@@ -2473,6 +4427,139 @@ definitions:
           - APU_UNITS
           - APU_WORKERS
           - APU_RECVS
+        properties:
+          ADATCP:
+            type: string
+            x-isnullable: false
+          ADATCPATB:
+            type: integer
+            x-isnullable: false
+          ADATCPCONNECTIONS:
+            type: integer
+            x-isnullable: false
+          ADATCPPORT:
+            type: integer
+            x-isnullable: false
+          ADATCPRECEIVER:
+            type: integer
+            x-isnullable: false
+          APU_RECVS:
+            type: integer
+            x-isnullable: false
+          APU_UNITS:
+            type: integer
+            x-isnullable: false
+          APU_WORKERS:
+            type: integer
+            x-isnullable: false
+          AR:
+            type: string
+            x-isnullable: false
+          BFIO:
+            type: integer
+            x-isnullable: false
+          BI:
+            type: string
+            x-isnullable: false
+          CLOGBMAX:
+            type: integer
+            x-isnullable: false
+          CLOGLAYOUT:
+            type: integer
+            x-isnullable: false
+          LAB:
+            type: integer
+            x-isnullable: false
+          LABX:
+            type: integer
+            x-isnullable: false
+          LBP:
+            type: integer
+            x-isnullable: false
+          LOGGING:
+            type: string
+            x-isnullable: false
+          LPXA:
+            type: integer
+            x-isnullable: false
+          LWP:
+            type: integer
+            x-isnullable: false
+          NCL:
+            type: integer
+            x-isnullable: false
+          NISNHQ:
+            type: integer
+            x-isnullable: false
+          NT:
+            type: integer
+            x-isnullable: false
+          NU:
+            type: integer
+            x-isnullable: false
+          OPTIONS:
+            type: string
+            x-isnullable: false
+          PLOG:
+            type: string
+            x-isnullable: false
+          RPL_BLOCKS:
+            type: integer
+            x-isnullable: false
+          RPL_RECORDS:
+            type: integer
+            x-isnullable: false
+          RPL_TOTAL:
+            type: integer
+            x-isnullable: false
+          TNAA:
+            type: integer
+            x-isnullable: false
+          TNAE:
+            type: integer
+            x-isnullable: false
+          TNAX:
+            type: integer
+            x-isnullable: false
+          TT:
+            type: integer
+            x-isnullable: false
+          USEREXITS:
+            type: string
+            x-isnullable: false
+          WRITE_LIMIT:
+            type: integer
+            x-isnullable: false
+  ParameterInfo:
+    type: object
+    properties:
+      Acronym:
+        type: string
+      DefaultValue:
+        type: string
+      Description:
+        type: string
+      ErrorCode:
+        type: integer
+      InifileValue:
+        type: string
+      IsDynamic:
+        type: boolean
+      IsMaxValueAvailable:
+        type: boolean
+        default: false
+      IsMinValueAvailable:
+        type: boolean
+      IsOnlineValueAvailable:
+        type: boolean
+      MaxValue:
+        type: integer
+      MinValue:
+        type: integer
+      Name:
+        type: string
+      OnlineValue:
+        type: string
   ParameterInfos:
     type: object
     properties:
@@ -2483,424 +4570,47 @@ definitions:
             type: array
             items:
               $ref: '#/definitions/ParameterInfo'
-  ParameterInfo:
+  Records:
     type: object
     properties:
-      ErrorCode:
-        type: integer
-      IsMinValueAvailable:
-        type: boolean
-      IsMaxValueAvailable:
-        type: boolean
-        default: false
-      IsOnlineValueAvailable:
-        type: boolean
-      IsDynamic:
-        type: boolean
-      DefaultValue:
-        type: string
-      MinValue:
-        type: integer
-      MaxValue:
-        type: integer
-      InifileValue:
-        type: string
-      OnlineValue:
-        type: string
-      Acronym:
-        type: string
-      Name:
-        type: string
-      Description:
-        type: string
-  CommandStats:
-    type: object
-    properties:
-      CommandStats:
+      Store:
         type: object
-        properties:
-          Commands:
-            type: array
-            items:
-              $ref: '#/definitions/CommandItems'
-  CommandItems:
+  Response:
     type: object
     properties:
-      CommandName:
+      MapName:
         type: string
-        x-isnullable: false
-      CommandCount:
+      FileRecords:
         type: integer
-        x-isnullable: false
-    required:
-      - CommandCount
-      - CommandName
-  BufferPoolStats:
-    type: object
-    properties:
-      Statistics:
-        type: object
-        properties:
-          Size:
-            type: integer
-          AllocCurrent:
-            type: integer
-          AllocHighwater:
-            type: integer
-          AllocInternal:
-            type: integer
-          AllocWorkpool:
-            type: integer
-          RabnsAsso:
-            type: integer
-          RabnsData:
-            type: integer
-          RabnsWork:
-            type: integer
-          RabnsNucTmp:
-            type: integer
-          RabnsNucSort:
-            type: integer
-          IOLogicalReads:
-            type: integer
-          IOPhysicalsReads:
-            type: integer
-          IOPhysicalWrites:
-            type: integer
-          IOHitRateHigh:
-            type: integer
-          IOHitRateLow:
-            type: integer
-          FlushesTotal:
-            type: integer
-          FlushesFree:
-            type: integer
-          WriteLimit:
-            type: integer
-          Modified:
-            type: integer
-  ActivityStats:
-    type: object
-    properties:
-      Statistics:
-        type: object
-        properties:
-          BufferPoolIO:
-            type: integer
-          WorkReads:
-            type: integer
-          WorkWrites:
-            type: integer
-          PlogWrites:
-            type: integer
-          ThbWaitUQContext:
-            type: integer
-          ThbWaitIsn:
-            type: integer
-          ThbEtSync:
-            type: integer
-          ThbDWPOverflow:
-            type: integer
-          BPHitRate:
-            type: number
-          FPHitRate:
-            type: integer
-          WPSpaceWaitCurrent:
-            type: integer
-          WpSpaceWaitTotal:
-            type: integer
-  ThreadTable:
-    type: object
-    properties:
-      Threads:
+      NrRecords:
+        type: integer
+      FieldNames:
         type: array
         items:
-          $ref: '#/definitions/Thread'
-  Thread:
-    type: object
-    properties:
-      Thread:
-        type: integer
-      File:
-        type: integer
-      CommandCount:
-        type: integer
-      Status:
-        type: string
-      CommandCode:
-        type: string
-      APU:
-        type: integer
-  NucleusLog:
-    type: object
-    properties:
-      Log:
-        type: object
-        properties:
-          Log:
-            type: string
-  HWM:
-    type: object
-    properties:
-      HighWater:
-        type: object
-        properties:
-          UserQueueSize:
-            type: integer
-          UserQueueHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          HoldQueueSize:
-            type: integer
-          HoldQueueHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          CommandQueueSize:
-            type: integer
-          CommandQueueHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          ThreadSize:
-            type: integer
-          ThreadsHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          WorkpoolSize:
-            type: integer
-          WorkpoolHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          BufferpoolSize:
-            type: integer
-          BufferpoolHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          ProtectionAreaSize:
-            type: integer
-          ProtectionAreaActiveSize:
-            type: integer
-          ProtectionAreaActiveHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          LPXASize:
-            type: integer
-          LPXAHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          LWOSize:
-            type: integer
-          LWOHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          SortAreaSize:
-            type: integer
-          IsnSortHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          ComplexSearchHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          GroupCommitSize:
-            type: integer
-          GroupCommitHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          TransactionTimeSize:
-            type: integer
-          TransactionTimeHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          HQUserLimitSize:
-            type: integer
-          HQUserLimitHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          AttachedBufferSize:
-            type: integer
-          AttachedBufferHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          ClientQueueSize:
-            type: integer
-          ClientQueueHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          LABXSize:
-            type: integer
-          LABXHighWaterMark:
-            $ref: '#/definitions/HighWaterEntries'
-          NucleusStartTime:
-            type: string
-            format: date-time
-  HighWaterEntries:
-    type: object
-    properties:
-      inuse:
-        type: integer
-        x-isnullable: false
-      high:
-        type: integer
-        x-isnullable: false
-      time:
-        type: string
-        format: date-time
-        x-isnullable: false
-    required:
-      - inuse
-      - high
-      - time
-  FduFdt:
-    type: object
-    properties:
-      fileNumber:
-        type: integer
-      maxIsn:
-        type: integer
-      fduOptions:
-        type: object
-        properties:
-          fduName:
-            type: string
-          fduBlocksizeDS:
-            type: integer
-          fduBlocksizeAC:
-            type: integer
-          fduBlocksizeNI:
-            type: integer
-          fduBlocksizeUI:
-            type: integer
-          fduACrabn:
-            type: integer
-          fduAssoPfac:
-            type: integer
-          fduNiBlocksize:
-            type: integer
-          fduNobt:
-            type: integer
-          fduCipher:
-            type: integer
-          fduContiguous:
-            type: integer
-          fduDataPfac:
-            type: integer
-          fduNoDsst:
-            type: integer
-          fduUiBlocksize:
-            type: integer
-          fduDSRabn:
-            type: integer
-          fduDSSize:
-            type: integer
-          fduErase:
-            type: integer
-          fduPGMRefresh:
-            type: integer
-          fduDSMUnitNILong:
-            type: integer
-          fduDSMUnitUILong:
-            type: integer
-          fduIsnSize:
-            type: integer
-          fduNiRabn:
-            type: integer
-          fduNISize:
-            type: integer
-          fduReuse:
-            type: integer
-          fduUIRabn:
-            type: integer
-          fduUISize:
-            type: integer
-          fduDSMUnitDS:
-            type: integer
-          fduDSMUnitNI:
-            type: integer
-          fduDSMUnitUI:
-            type: integer
-          fduAdamKey:
-            type: integer
-          fduLobFileOption:
-            type: integer
-          fduMaxRecordLength:
-            type: integer
-          fduAdamDsBlocks:
-            type: integer
-          fduParamAdam:
-            type: integer
-          fduLobFile:
-            type: integer
-          fduAdamOffset:
-            type: integer
-          fduAdamByteKey:
-            type: string
-          fduOverflowAdam:
-            type: integer
-          fduNiLongRabn:
-            type: integer
-          fduNiLongSize:
-            type: integer
-          fduUiLongRabn:
-            type: integer
-          fduUiLongSize:
-            type: integer
-          fduSystemFileMaxMu:
-            type: integer
-      fdtDefinition:
-        type: string
-    required:
-      - fduOptions
-      - fdtDefinition
-  Fdt:
-    type: object
-    properties:
-      FDT:
-        type: object
-        properties:
-          Time:
-            type: string
-            format: date-time
-          Fields:
-            type: array
-            items:
-              $ref: '#/definitions/Field'
-          Descriptors:
-            type: array
-            items:
-              $ref: '#/definitions/Field'
-          Referentials:
-            type: array
-            items:
-              $ref: '#/definitions/Field'
-  Field:
-    type: object
-    properties:
-      Level:
-        type: integer
-      Name:
-        type: string
-      Length:
-        type: integer
-      Format:
-        type: string
-      Type:
-        type: string
-      Flags:
-        type: string
-      SubFields:
+          type: string
+      Records:
         type: array
         items:
-          $ref: '#/definitions/SubField'
-        x-nullable: true
-  SubField:
+          type: object
+    #       $ref: '#/definitions/Data'
+    #     properties:
+    #       ISN:
+    #         type: integer
+    #         xml:
+    #           attribute: true
+  StoreResponse:
     type: object
     properties:
-      SubName:
-        type: string
-      From:
+      NrStored:
         type: integer
-      To:
-        type: integer
-  Versions:
-    type: object
-    properties:
-      Product:
-        type: string
-      Version:
-        type: string
-      Handler:
+      Stored:
         type: array
         items:
-          $ref: '#/definitions/Handler'
-  Handler:
+          type: integer
+  Status:
     type: object
     properties:
-      Name:
-        type: string
-      Version:
+      Message:
         type: string
   StatusResponse:
     type: object
@@ -2908,199 +4618,49 @@ definitions:
       Status:
         type: object
         properties:
-          Dbid:
-            type: integer
+          Action:
+            type: string
           Code:
             type: string
-          Action:
-            type: string
-          Message:
-            type: string
-  Error:
-    type: object
-    properties:
-      Error:
-        type: object
-        properties:
-          code:
-            type: string
-          message:
-            type: string
-  JobStatusResponse:
-    type: object
-    properties:
-      Status:
-        type: object
-        properties:
-          ExecutionId:
+          Dbid:
             type: integer
-          Name:
-            type: string
-          Action:
-            type: string
           Message:
             type: string
-  JobDescription:
+  SubField:
     type: object
     properties:
-      User:
+      From:
+        type: integer
+      SubName:
         type: string
-      Name:
-        type: string
-      Description:
-        type: string
-      Utility:
-        type: string
-      Parameters:
-        type: array
-        items:
-          type: object
-          properties:
-            Parameter:
-              type: string
-      Environment:
-        type: array
-        items:
-          type: string
-      Script:
-        type: string
-      CronSchedule:
-        type: string
-  JobParameter:
+      To:
+        type: integer
+  Thread:
     type: object
     properties:
-      Job:
-        $ref: '#/definitions/JobDescription'
-  JobResult:
-    type: object
-    properties:
-      JobResult:
-        type: object
-        properties:
-          Id:
-            type: number
-          Name:
-            type: string
-          Description:
-            type: string
-          Scheduled:
-            type: string
-            format: date-time
-          Ended:
-            type: string
-            format: date-time
-          Status:
-            type: string
-          StartedBy:
-            type: string
-          ExitCode:
-            type: number
-          Log:
-            type: string
-  JobsList:
-    type: object
-    properties:
-      JobDefinition:
-        type: array
-        items:
-          $ref: '#/definitions/JobDefinition'
-  JobDefinition:
-    type: object
-    properties:
+      APU:
+        type: integer
+        x-omitempty: false
+      CommandCode:
+        type: string
+      CommandCount:
+        type: integer
+        x-omitempty: false
+      File:
+        type: integer
+        x-omitempty: false
       Status:
         type: string
-      Job:
-        $ref: '#/definitions/Job'
-      Executions:
-        type: array
-        items:
-          $ref: '#/definitions/Executions'
-  Job:
-    type: object
-    properties:
-      Name:
-        type: string
-      User:
-        type: string
-      Description:
-        type: string
-      Utility:
-        type: string
-      Script:
-        type: string
-      Parameters:
-        type: array
-        items:
-          type: object
-          properties:
-            Parameter:
-              type: string
-      Environments:
-        type: array
-        items:
-          type: object
-          properties:
-            Parameter:
-              type: string
-  Directories:
-    type: object
-    properties:
-      Directories:
-        type: array
-        items:
-          $ref: '#/definitions/Directory'
-      system:
-        type: string
-  Directory:
-    type: object
-    properties:
-      Name:
-        type: string
-      Location:
-        type: string
-  FileLocation:
-    type: object
-    properties:
-      Reference:
-        type: string
-      Location:
-        type: string
-      Content:
-        type: array
-        items:
-          $ref: '#/definitions/File'
-  File:
-    type: object
-    properties:
-      Name:
-        type: string
-      Size:
+      Thread:
         type: integer
-      Created:
-        type: string
-        format: data-time
-      Modified:
-        type: string
-        format: date-time
-      Type:
-        type: string
-  Executions:
+        x-omitempty: false
+  ThreadTable:
     type: object
     properties:
-      Id:
-        type: integer
-      Database:
-        type: integer
-      Scheduled:
-        type: string
-        format: date-time
-      Ended:
-        type: string
-        format: date-time
-      Log:
-        type: string
-      ExitCode:
-        type: number
+      Threads:
+        type: array
+        items:
+          $ref: '#/definitions/Thread'
   UCB:
     type: object
     properties:
@@ -3116,18 +4676,241 @@ definitions:
   UCBEntry:
     type: object
     properties:
+      Count:
+        type: integer
+      DBMode:
+        type: string
       Date:
         type: string
         format: date-time
-      Sequence:
-        type: integer
       Id:
         type: string
-      DBMode:
-        type: string
-      Count:
+      Sequence:
         type: integer
       ucbFiles:
         type: array
         items:
           type: integer
+  UserInformation:
+    type: object
+    properties:
+      Id:
+        type: integer
+      Node:
+        type: string
+      Terminal:
+        type: string
+      Timestamp:
+        type: string
+        format: date-time
+  UserQueue:
+    type: object
+    properties:
+      UserQueue:
+        type: object
+        properties:
+          UserQueueEntry:
+            type: array
+            items:
+              $ref: '#/definitions/UserQueueEntry'
+  UserQueueDetail:
+    type: object
+    properties:
+      CommandCount:
+        type: integer
+      ISN_Hold:
+        type: integer
+      ISN_Lists:
+        type: integer
+      LastActivity:
+        type: string
+        format: date-time
+      StartSession:
+        type: string
+        format: date-time
+      StartTransaction:
+        type: string
+        format: date-time
+      TNALimit:
+        type: integer
+      TTLimit:
+        type: integer
+      TransactionCount:
+        type: integer
+      UserEncoding:
+        type: integer
+      UserQueueDetail:
+        type: object
+        properties:
+          DetailEntry:
+            type: array
+            items:
+              $ref: '#/definitions/UserQueueEntry'
+      files:
+        type: array
+        items:
+          type: integer
+  UserQueueEntry:
+    type: object
+    properties:
+      EtFlags:
+        type: string
+      Flags:
+        type: string
+      Uid:
+        $ref: '#/definitions/UserInformation'
+      UqId:
+        type: integer
+      User:
+        type: string
+  Versions:
+    type: object
+    properties:
+      Handler:
+        type: array
+        items:
+          $ref: '#/definitions/Handler'
+      Product:
+        type: string
+      Version:
+        type: string
+  WORKExtents:
+    type: object
+    properties:
+      BlockSize:
+        type: integer
+      DeviceType:
+        type: string
+      Id:
+        type: string
+      Number:
+        type: integer
+      RABNfirst:
+        type: integer
+      RABNlast:
+        type: integer
+      RABNunused:
+        type: integer
+parameters:
+  mapParam:
+    type: string
+    description: Map definition name
+    name: name
+    in: path
+    required: true
+  dbidParam:
+    type: number
+    description: Database ID
+    name: dbid
+    in: path
+    required: true
+  fileParam:
+    type: number
+    description: File number
+    name: file
+    in: path
+    required: true
+  fileReferenceParam:
+    type: string
+    description: Identifier of the file location
+    name: file
+    in: query
+    required: true
+  fieldsParam:
+    type: string
+    default: '*'
+    description: A comma separated list of fields which should be in the result
+    name: fields
+    in: query
+  searchParam:
+    type: string
+    description: search criterium
+    name: search
+    in: query
+  startParam:
+    type: number
+    default: 0
+    description: Start offset where the read will start from
+    name: start
+    in: query
+  limitParam:
+    type: number
+    default: 20
+    description: Maximal number of records retrieved
+    name: limit
+    in: query
+  sortParam:
+    type: string
+    description: sort criterium
+    name: sorted_by
+    in: query
+  compactParam:
+    type: boolean
+    description: return result in compact structure
+    name: compact
+    in: query
+  flattenParam:
+    type: boolean
+    description: remove database group tree entries in result records
+    name: flatten
+    in: query
+  descriptorParam:
+    type: boolean
+    description: Read a descriptor read with the given field entry
+    name: descriptor
+    in: query
+  locationParam:
+    type: string
+    description: Identifier of the file location
+    name: location
+    in: path
+    required: true
+  rfc3339Param:
+    type: boolean
+    description: Return time format in RFC3339
+    name: rfc3339
+    in: query
+securityDefinitions:
+  BasicAuth:
+    # This scheme uses the header: "Authorization: Basic {base64 encoded string defined by username:password}"
+    # Scopes are not supported with this type of authorization.
+    description: HTTP Basic Authentication. Works over `HTTP` and `HTTPS`
+    type: basic
+  isReseller:
+    # This scheme uses the header: "X-Custom-Key: {base64 encoded string}"
+    # Scopes are not supported with this type of authorization.
+    type: apiKey
+    in: header
+    name: X-Custom-Key
+  # isResellerQuery:
+  #   # This scheme uses the query parameter "CustomKeyAsQuery"
+  #   # Scopes are not supported with this type of authorization.
+  #   type: apiKey
+  #   in: query
+  #   name: CustomKeyAsQuery
+  hasRole:
+    # This scheme uses the header: "Authorization: Bearer {base64 encoded string representing a JWT}"
+    # Alternatively, the query param: "access_token" may be used.
+    #
+    # In our scenario, we must use the query param version in order to avoid 
+    # passing several headers with key 'Authorization'
+    type: oauth2
+    # The flow and URLs in spec are for documentary purpose: go-swagger does not implement OAuth workflows
+    flow: accessCode
+    authorizationUrl: 'https://dummy.oauth.net/auth'
+    tokenUrl: 'https://dumy.oauth.net/token'
+    # Required scopes are passed by the runtime to the authorizer
+    scopes:
+      customer: scope of registered customers
+      inventoryManager: scope of resellers acting as inventory managers
+tags:
+  - description: Adabas Administration information
+    name: Environment
+  - description: Adabas Online usage only
+    name: Online
+  - description: Adabas offline usage only
+    name: Offline
+  - description: Adabas Online and offline usage possible
+    name: OnlineOffline
+  - description: Scheduler managing jobs running in the RESTful server
+    name: Scheduler
