@@ -103,9 +103,8 @@ test-sanitizer:  ARGS=-msan      ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
 check test tests: fmt lint ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests
-	$Q cd $(CURDIR) && \
-	    TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) REFERENCES=$(REFERENCES) \
-	    $(GO) test -timeout $(TIMEOUT)s -v $(ARGS) ./...
+	$Q cd $(CURDIR) && TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) REFERENCES=$(REFERENCES) \
+	    $(GO) test -timeout $(TIMEOUT)s -v -tags $(GO_TAGS) $(ARGS) ./...
 
 TEST_XML_TARGETS := test-xml-bench
 .PHONY: $(TEST_XML_TARGETS) test-xml
@@ -131,8 +130,8 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q echo "Work on test packages: $(TESTPKGS)"
 	$Q cd $(CURDIR) && for pkg in $(TESTPKGS); do echo "Coverage for $$pkg"; \
 		TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) \
-	    REFERENCES=$(REFERENCES) \
-	    ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
+	    REFERENCES=$(REFERENCES) ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) \
+		ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
 		$(GO) test -count=1 \
 			-coverpkg=$$($(GO) list -f '{{ join .Deps "\n" }}' $$pkg | \
 					grep '^$(PACKAGE)/' | grep -v '^$(PACKAGE)/vendor/' | \
@@ -181,7 +180,6 @@ help:
 doc: ; $(info $(M) running GODOC…) @ ## Run go doc on all source files
 	$Q cd $(CURDIR) && echo "Open http://localhost:6060/pkg/github.com/SoftwareAG/adabas-go-api/" && \
 	    $(GODOC) -http=:6060 -v -src
-#	    $(GO) doc $(PACKAGE)
 
 .PHONY: vendor-update
 vendor-update:

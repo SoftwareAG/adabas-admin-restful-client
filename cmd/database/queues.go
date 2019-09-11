@@ -109,7 +109,7 @@ func HoldQueue(clientInstance *client.AdabasAdmin, dbid int, auth runtime.Client
 	fmt.Println()
 	fmt.Printf("   Id Node Id   Login Id     ES Id     User Id  File           ISN Locks  Flg\n")
 	for _, c := range resp.Payload.HoldQueue {
-		fmt.Printf(" %3d  %-8s  %-8s     %3d  %3s  %d  %s %s\n", c.HqCommid, c.Hid[0].Node, c.Hid[0].Terminal, c.Hid[0].ID, c.User, c.File, c.Locks, c.Flags)
+		fmt.Printf(" %3d  %-8s  %-8s     %3d  %3s  %-3d  %d %s %s\n", c.HqCommid, c.Hid[0].Node, c.Hid[0].Terminal, c.Hid[0].ID, c.User, c.File, c.Isn, c.Locks, c.Flags)
 	}
 	return nil
 }

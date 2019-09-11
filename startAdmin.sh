@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "Start admin client $*"
 
 ADABAS_ADMIN_HOME=`pwd`
 SRCDIR=${ADABAS_ADMIN_HOME}/src

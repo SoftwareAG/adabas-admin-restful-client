@@ -20,3 +20,5 @@ aifprocess.out
 
 models/
 client/
+
+database.test
