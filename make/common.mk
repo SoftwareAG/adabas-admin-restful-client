@@ -32,6 +32,8 @@ M = $(shell printf "\033[34;1m▶\033[0m")
 .PHONY: all
 all: prepare generatemodels fmt lint lib $(EXECS) test-build
 
+execs: $(EXECS)
+
 lib: $(LIBS) $(CEXEC)
 
 prepare: $(LOGPATH) $(CURLOGPATH) $(BIN)
