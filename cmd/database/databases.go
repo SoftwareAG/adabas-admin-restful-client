@@ -441,8 +441,17 @@ func Parameter(clientInstance *client.AdabasAdmin, dbid int, para string, auth r
 	typ := reflect.TypeOf(*dbParameter)
 	for i := 0; i < typ.NumField(); i++ {
 		field := typ.Field(i)
+		n, ok := field.Tag.Lookup("json")
+		if !ok {
+			n = field.Name
+		} else {
+			ec := strings.IndexByte(n, ',')
+			if ec > 0 {
+				n = n[:ec]
+			}
+		}
 		v := val.Field(i)
-		fmt.Println("    ", field.Name, "=", v)
+		fmt.Println("    ", n, "=", v)
 	}
 	return nil
 }
@@ -575,7 +584,7 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 						switch v[0] {
 						case "NT", "TT", "NU", "NCL", "NISNHQ", "TNAE", "TNAA", "TNAX", "LAB", "LABX", "LBP",
 							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "ADATCPCONNECTIONS",
-							"APUUNITS", "APURECVS", "APUWORKERS",
+							"APU_UNITS", "APU_RECVS", "APU_WORKERS",
 							"RPLBLOCKS", "RPLTOTAL", "RPLRECORDS", "WRITELIMIT":
 							i, err := strconv.Atoi(v[1])
 							if err != nil {

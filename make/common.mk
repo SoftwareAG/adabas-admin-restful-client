@@ -18,11 +18,7 @@
 
 PKGS        = $(or $(PKG),$(shell cd $(CURDIR) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^vendor/"))
 TESTPKGS    = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
-<<<<<<< HEAD
 GO_FLAGS    = $(if $(debug),"-x",)
-=======
->>>>>>> 25d10b451af46437d07ee3bcacb6f0b779f60d99
-
 GO      = go
 GODOC   = godoc
 GOARCH   ?= $(shell $(GO) env GOARCH)
@@ -34,6 +30,8 @@ M = $(shell printf "\033[34;1m▶\033[0m")
 
 .PHONY: all
 all: prepare generatemodels fmt lint lib $(EXECS) test-build
+
+execs: $(EXECS)
 
 lib: $(LIBS) $(CEXEC)
 
@@ -106,14 +104,8 @@ test-sanitizer:  ARGS=-msan      ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
 check test tests: fmt lint ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests
-<<<<<<< HEAD
-	$Q cd $(CURDIR) && \
-	    TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) REFERENCES=$(REFERENCES) \
-	    $(GO) test -timeout $(TIMEOUT)s -v $(ARGS) ./...
-=======
 	$Q cd $(CURDIR) && TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) REFERENCES=$(REFERENCES) \
 	    $(GO) test -timeout $(TIMEOUT)s -v -tags $(GO_TAGS) $(ARGS) ./...
->>>>>>> 25d10b451af46437d07ee3bcacb6f0b779f60d99
 
 TEST_XML_TARGETS := test-xml-bench
 .PHONY: $(TEST_XML_TARGETS) test-xml
@@ -121,18 +113,10 @@ test-xml-bench:     ARGS=-run=__absolutelynothing__ -bench=. ## Run benchmarks
 $(TEST_XML_TARGETS): NAME=$(MAKECMDGOALS:test-xml-%=%)
 $(TEST_XML_TARGETS): test-xml
 test-xml: prepare fmt lint $(TESTOUTPUT) | $(GO2XUNIT) ; $(info $(M) running $(NAME:%=% )tests…) @ ## Run tests with xUnit output
-<<<<<<< HEAD
 	$Q cd $(CURDIR) && 2>&1 TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) \
 	    REFERENCES=$(REFERENCES) \
 	    ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
 	    $(GO) test -timeout $(TIMEOUT)s -count=1 $(GO_FLAGS) -v $(ARGS) ./... | tee $(TESTOUTPUT)/tests.output
-=======
-	sh $(CURDIR)/sh/evaluateQueues.sh
-	$Q cd $(CURDIR) && 2>&1 TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) \
-	    REFERENCES=$(REFERENCES) ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
-	    $(GO) test -timeout $(TIMEOUT)s -count=1 $(GO_FLAGS) -v $(ARGS) ./... | tee $(TESTOUTPUT)/tests.output
-	sh $(CURDIR)/sh/evaluateQueues.sh
->>>>>>> 25d10b451af46437d07ee3bcacb6f0b779f60d99
 	$(GO2XUNIT) -input $(TESTOUTPUT)/tests.output -output $(TESTOUTPUT)/tests.xml
 
 COVERAGE_MODE = atomic
@@ -147,13 +131,8 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q echo "Work on test packages: $(TESTPKGS)"
 	$Q cd $(CURDIR) && for pkg in $(TESTPKGS); do echo "Coverage for $$pkg"; \
 		TESTFILES=$(TESTFILES) GO_ADA_MESSAGES=$(MESSAGES) LOGPATH=$(LOGPATH) \
-<<<<<<< HEAD
 	    REFERENCES=$(REFERENCES) \
 	    ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
-=======
-	    REFERENCES=$(REFERENCES) ENABLE_DEBUG=$(ENABLE_DEBUG) WCPHOST=$(WCPHOST) \
-		ADATCPHOST=$(ADATCPHOST) ADAMFDBID=$(ADAMFDBID) \
->>>>>>> 25d10b451af46437d07ee3bcacb6f0b779f60d99
 		$(GO) test -count=1 \
 			-coverpkg=$$($(GO) list -f '{{ join .Deps "\n" }}' $$pkg | \
 					grep '^$(PACKAGE)/' | grep -v '^$(PACKAGE)/vendor/' | \
@@ -202,10 +181,7 @@ help:
 doc: ; $(info $(M) running GODOC…) @ ## Run go doc on all source files
 	$Q cd $(CURDIR) && echo "Open http://localhost:6060/pkg/github.com/SoftwareAG/adabas-go-api/" && \
 	    $(GODOC) -http=:6060 -v -src
-<<<<<<< HEAD
 #	    $(GO) doc $(PACKAGE)
-=======
->>>>>>> 25d10b451af46437d07ee3bcacb6f0b779f60d99
 
 .PHONY: vendor-update
 vendor-update:

@@ -20,7 +20,7 @@ GOARCH     ?= $(shell $(GO) env GOARCH)
 GOOS       ?= $(shell $(GO) env GOOS)
 
 PACKAGE     = softwareag.com
-TESTPKGSDIR =
+TESTPKGSDIR  = cmd/database
 DATE       ?= $(shell date +%FT%T%z)
 VERSION    ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
@@ -40,20 +40,27 @@ include $(CURDIR)/make/common.mk
 generatemodels: $(SWAGGER_SPEC) $(CURDIR)/models
 
 $(CURDIR)/models: $(GOSWAGGER) $(SWAGGER_SPEC) 
-	GOPATH=$(CURDIR) $(GOSWAGGER) generate client -A AdabasAdmin -f $(SWAGGER_SPEC) -t $(CURDIR) -r copyright; \
+	if [ ! -d $(CURDIR)/models ]; then \
+		GOPATH=$(CURDIR) $(GOSWAGGER) generate client -A AdabasAdmin -f $(SWAGGER_SPEC) -t $(CURDIR) -r copyright; \
+	fi
 
 .PHONY: clean
-clean: cleanModules cleanModels cleanCommon ; $(info $(M) cleaning…)	@ ## Cleanup everything
+clean: cleanModules cleanVendor cleanModels cleanCommon ; $(info $(M) cleaning…)	@ ## Cleanup everything
 	@rm -rf database.test
-	@rm -rf $(CURDIR)/bin $(CURDIR)/pkg $(CURDIR)/logs $(CURDIR)/test
+	@rm -rf bin pkg logs test
+	@rm -rf test/tests.* test/coverage.*
+	@rm -rf $(CURDIR)/cmd/adabas-rest-server/logs
+
+cleanVendor: ; $(info $(M) cleaning vendor…)    @ ## Cleanup vendor
+	@rm -rf $(CURDIR)/vendor
 
 cleanModels: ; $(info $(M) cleaning models…)    @ ## Cleanup models
-	@rm -rf $(CURDIR)/models $(CURDIR)/client
+	@rm -rf $(CURDIR)/models
+	@rm -rf $(CURDIR)/restapi/[!c]*
+	@rm -rf $(CURDIR)/restapi/operations
 
 $(BIN)/server: prepare generatemodels fmt lint lib $(EXECS)
 
 startClient:
-	DYLD_LIBRARY_PATH=:$(ACLDIR)/lib:/lib:/usr/lib ENABLE_DEBUG=$(ENABLE_DEBUG) \
-	CGO_CFLAGS="$(CGO_CFLAGS)" CGO_LDFLAGS="$(CGO_LDFLAGS) $(CGO_EXT_LDFLAGS)" $(GO) run $(GO_FLAGS) \
-		-ldflags '-X $(PACKAGE)/cmd.Version=$(VERSION) -X $(PACKAGE)/cmd.BuildDate=$(DATE)' \
+	$(GO) run $(GO_FLAGS) -ldflags '-X $(PACKAGE)/cmd.Version=$(VERSION) -X $(PACKAGE)/cmd.BuildDate=$(DATE)' \
 	./$(EXECS:$(BIN)/%=%)
