@@ -287,7 +287,25 @@ func main() {
 		version(clientInstance)
 		return
 	}
-
+	loginParm := environment.NewGetLoginSessionParams()
+	loginOk, err := clientInstance.Environment.GetLoginSession(loginParm, auth)
+	if err == nil {
+		// Received Bearer JWT token
+		auth = runtime.ClientAuthInfoWriterFunc(func(r runtime.ClientRequest, _ strfmt.Registry) error {
+			cookies := cookieJar.Cookies(cookieURL)
+			for _, c := range cookies {
+				if c.Name == "ADAADMIN" {
+					expiration := time.Now().Add(5 * time.Minute)
+					cookie = &http.Cookie{Name: "ADAADMIN", Value: c.Value, Expires: expiration}
+					r.SetHeaderParam("Cookie", cookie.String())
+					break
+				}
+			}
+			return r.SetHeaderParam("Authorization", "Bearer "+loginOk.Payload.Token)
+		})
+	} else {
+		fmt.Printf("Error to login session: %v\n", err)
+	}
 	// expiration := time.Now().Add(5 * time.Minute)
 	// cookie := http.Cookie{Name: "myCookie", Value: "Hello World", Expires: expiration}
 	// http.SetCookie(clientInstance, &cookie)

@@ -10,4 +10,4 @@ if [ ! -r $LOGPATH ]; then
    mkdir $LOGPATH
 fi
 export ENABLE_DEBUG LOGPATH ADABAS_ADMIN_HOME
-go run cmd/adabas-rest-client/main.go $*
+go run cmd/adabas-restful-client/main.go $*

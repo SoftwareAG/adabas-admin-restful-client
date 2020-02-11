@@ -576,15 +576,16 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 					fmt.Println("Found options=" + options)
 				}
 			} else {
-				pmap[v[0]] = v[1]
+				n := strings.Replace(v[0], "_", "", -1)
+				pmap[n] = v[1]
 				vp := reflect.ValueOf(params).Elem()
-				f := vp.FieldByName(v[0])
+				f := vp.FieldByName(n)
 				if f.IsValid() {
 					if f.IsNil() && f.CanSet() {
-						switch v[0] {
+						switch n {
 						case "NT", "TT", "NU", "NCL", "NISNHQ", "TNAE", "TNAA", "TNAX", "LAB", "LABX", "LBP",
 							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "ADATCPCONNECTIONS",
-							"APU_UNITS", "APU_RECVS", "APU_WORKERS",
+							"APUUNITS", "APURECVS", "APUWORKERS", "SSLPORT",
 							"RPLBLOCKS", "RPLTOTAL", "RPLRECORDS", "WRITELIMIT":
 							i, err := strconv.Atoi(v[1])
 							if err != nil {
@@ -593,7 +594,7 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 							}
 							i64 := int64(i)
 							f.Set(reflect.ValueOf(&i64))
-						case "ADATCP", "PLOG", "BI":
+						case "ADATCP", "PLOG", "BI", "SSLVERIFY":
 							var i bool
 							switch strings.ToLower(v[1]) {
 							case "on", "yes", "true":
@@ -609,7 +610,7 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 
 					}
 				}
-				fmt.Println(f)
+				fmt.Println("Set", f, f.Type())
 			}
 		}
 	}
