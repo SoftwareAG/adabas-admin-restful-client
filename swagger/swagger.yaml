@@ -3549,33 +3549,6 @@ paths:
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
-  /stream/{length}:
-    get:
-      summary: Count down the number of seconds
-      description: Count down the seconds remaining
-      operationId: elapse
-      parameters:
-        - name: length
-          in: path
-          description: How many seconds to count down
-          required: true
-          type: integer
-          minimum: 2
-          maximum: 30
-      responses:
-        200:
-            description: Secondly update on remaining time
-            # This is the best representation there is in Swagger 2.0 to
-            # say that this endpoint has a streaming response.
-            # In this implementation, it will be newline delimited JSON
-            # bodies, of the `Mark` type defined below
-            schema:
-              type: string
-              format: binary
-        '401':
-          description: Authorization error
-        '403':
-          description: Role access denied
   '/rest/access/{role}':
     get:
       summary: Retrieve current user list
