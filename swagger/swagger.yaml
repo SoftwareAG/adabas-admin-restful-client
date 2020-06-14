@@ -4637,10 +4637,13 @@ definitions:
         type: string
       Description:
         type: string
-      Environment:
+      Environments:
         type: array
         items:
-          type: string
+          type: object
+          properties:
+            Parameter:
+              type: string
       Name:
         type: string
       Parameters:

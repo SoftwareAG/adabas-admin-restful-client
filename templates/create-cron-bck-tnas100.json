@@ -1,0 +1,1 @@
+{"Job":{"User":"RTK","Name":"backup100","Description":"Backup database 100","Utility":"ADABCK","Scripts":"","Parameters":[{"Parameter":"db=24"},  {"Parameter":"dump=*"}],"Environments":[{"Parameter":"BCK001=abc.bck"}],"CronScheduler":"1 * * * *"}}
