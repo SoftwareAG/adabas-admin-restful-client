@@ -584,7 +584,7 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 					if f.IsNil() && f.CanSet() {
 						switch n {
 						case "NT", "TT", "NU", "NCL", "NISNHQ", "TNAE", "TNAA", "TNAX", "LAB", "LABX", "LBP",
-							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "ADATCPCONNECTIONS",
+							"LWP", "LPXA", "ADATCPPORT", "ADATCPRECEIVER", "ADATCPATB", "ADATCPCONNECTIONS", "SSLVERIFY",
 							"APUUNITS", "APURECVS", "APUWORKERS", "SSLPORT",
 							"RPLBLOCKS", "RPLTOTAL", "RPLRECORDS", "WRITELIMIT":
 							i, err := strconv.Atoi(v[1])
@@ -594,7 +594,7 @@ func SetParameter(clientInstance *client.AdabasAdmin, dbid int, param string, au
 							}
 							i64 := int64(i)
 							f.Set(reflect.ValueOf(&i64))
-						case "ADATCP", "PLOG", "BI", "SSLVERIFY":
+						case "ADATCP", "PLOG", "BI":
 							var i bool
 							switch strings.ToLower(v[1]) {
 							case "on", "yes", "true":

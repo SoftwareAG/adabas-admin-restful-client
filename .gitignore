@@ -20,5 +20,6 @@ aifprocess.out
 
 models/
 client/
+package/
 
 database.test

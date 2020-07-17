@@ -6,8 +6,8 @@ schemes:
   - wss
 swagger: '2.0'
 info:
-  description: Adabas Administration
-  title: Adabas Administration
+  description: Adabas RESTful server
+  title: Adabas RESTful server
   contact:
     name: Software AG Support
     url: 'https://empower.softwareag.com/'
@@ -15,7 +15,7 @@ info:
   license:
     name: Software AG
     url: 'http://documentation.softwareag.com/legal/general_license.txt'
-  version: 6.7.1.0.30012020
+  version: 7.0.0.0.01072020
 host: 'localhost:8120'
 basePath: /
 paths:
@@ -212,6 +212,204 @@ paths:
             $ref: '#/definitions/Versions'
         '400':
           description: Error application not running correctly
+          schema:
+            $ref: '#/definitions/Error'
+  /adabas/config:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Common information 
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getAdabasConfig
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+  /adabas/config/server:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Defines the current Adabas Map repositories 
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getServerConfig
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Server'
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+
+  /adabas/config/mapping:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Defines the current Adabas Map repositories 
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getMappingConfig
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/MappingConfig'
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+
+    put:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: add configuration in Adabas Map repositories
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: OK
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+
+    delete:
+      description: delete entry in configuration
+      responses:
+        '200':
+          description: OK
+
+
+  /adabas/config/module:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Defines the current Adabas Module section 
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getModuleConfig
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Module'
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+  /adabas/config/module/installation:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Defines the current Adabas Module section 
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: getInstallationConfig
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Installation'
+        '400':
+          description: Database error evaluating list
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ admin ]
+      description: Upload and activate new license file
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      produces:
+        - application/json
+      tags:
+        - Environment
+      operationId: uploadLicense
+      parameters:
+        - type: string
+          description: Installation the license should be added to
+          name: installation
+          in: query
+        - type: file
+          description: Upload license file
+          name: licenseFile
+          in: formData
+          required: true
+      responses:
+        '200':
+          description: 'Successful response, with download license file.'
+          schema:
+            $ref: '#/definitions/StatusResponse'
+        '400':
+          description: Environment evaluation error
+          schema:
+            $ref: '#/definitions/Error'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+        '404':
+          description: Location not available/unknown
           schema:
             $ref: '#/definitions/Error'
   /adabas/database:
@@ -1334,25 +1532,25 @@ paths:
           name: ADATCPCONNECTIONS
           in: query
         - type: integer
-          name: SSLPORT
+          name: SSL_PORT
           in: query
         - type: string
-          name: SSLCERTFILE
+          name: SSL_CERTFILE
           in: query
         - type: string
-          name: SSLKEYFILE
+          name: SSL_KEYFILE
           in: query
-        - type: boolean
-          name: SSLVERIFY
-          in: query
-        - type: string
-          name: SSLCAFILE
+        - type: integer
+          name: SSL_VERIFY
           in: query
         - type: string
-          name: SSLCADIRECTORY
+          name: SSL_CAFILE
           in: query
         - type: string
-          name: SSLPASSWORD
+          name: SSL_CADIRECTORY
+          in: query
+        - type: string
+          name: SSL_PASSWORD
           in: query
         - enum:
             - dynamic
@@ -2800,6 +2998,36 @@ paths:
           description: Error requesting the list of maps.
           schema:
             $ref: '#/definitions/Error'
+    post:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Store send records into Map definition
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      tags:
+        - MapDatabaseAccess
+      operationId: insertMapFileRecords
+      parameters:
+         - in: formData
+           name: data
+           type: file
+           description: The file to upload.
+      responses:
+        '200':
+          description: 'Successful response, send record is stored.'
+          schema:
+            $ref: '#/definitions/StoreResponse'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+        '404':
+          description: Error storing the record.
+          schema:
+            $ref: '#/definitions/Error'
   '/rest/map/{name}':
     get:
       security:
@@ -2981,6 +3209,7 @@ paths:
         - $ref: '#/parameters/compactParam'
         - $ref: '#/parameters/flattenParam'
         - $ref: '#/parameters/descriptorParam'
+        - $ref: '#/parameters/exchangeParam'
         - type: boolean
           description: Use XML notation namespace
           name: xmlnotation
@@ -3152,12 +3381,41 @@ paths:
           description: Could not read or don't found the specified map metadata.
           schema:
             $ref: '#/definitions/Error'
+  /rest/fields/{dbid}/{file}:
+    get:
+      security:
+        - BasicAuth: []
+        - hasRole: [ user ]
+      description: Retrieves all fields of an Adabas file
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      tags:
+        - ClassicDatabaseAccess
+      operationId: getFields
+      parameters:
+        - $ref: '#/parameters/dbidParam'
+        - $ref: '#/parameters/fileParam'
+      responses:
+        '200':
+          description: 'Successful response, with the list of fields in Adabas file.'
+          schema:
+            $ref: '#/definitions/Fields'
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
+        '404':
+          description: Error requesting the list of maps.
+          schema:
+            $ref: '#/definitions/Error'
   /scheduler/job:
     get:
       security:
         - BasicAuth: []
         - hasRole: [ admin ]
-      description: Retrieves a list of databases known by Adabas Interface.
+      description: Retrieves a list of jobs known by Adabas Interface.
       consumes:
         - application/json
       produces:
@@ -3549,6 +3807,33 @@ paths:
           description: Database not available/unknown
           schema:
             $ref: '#/definitions/Error'
+  /stream/{length}:
+    get:
+      summary: Count down the number of seconds
+      description: Count down the seconds remaining
+      operationId: elapse
+      parameters:
+        - name: length
+          in: path
+          description: How many seconds to count down
+          required: true
+          type: integer
+          minimum: 2
+          maximum: 30
+      responses:
+        200:
+            description: Secondly update on remaining time
+            # This is the best representation there is in Swagger 2.0 to
+            # say that this endpoint has a streaming response.
+            # In this implementation, it will be newline delimited JSON
+            # bodies, of the `Mark` type defined below
+            schema:
+              type: string
+              format: binary
+        '401':
+          description: Authorization error
+        '403':
+          description: Role access denied
   '/rest/access/{role}':
     get:
       summary: Retrieve current user list
@@ -3674,6 +3959,112 @@ paths:
           schema:
             $ref: '#/definitions/Error'
 definitions:
+  Server:
+    type: object
+    properties:
+      LogLocation:
+        type: object
+        properties:
+          directory:
+            type: string
+          level:
+            type: string
+      Content:
+        type: object
+        properties:
+          directory:
+            type: string
+      Service:
+        type: array
+        items:
+          type: object
+          properties:
+            port:
+              type: integer
+            type:
+              type: string
+  MappingConfig:
+    type: object
+    properties:
+      Mapping:
+        type: object
+        properties:
+          Directory:
+            type: object
+            properties:
+              url:
+                type: string
+          ClassicGlobal:
+              type: boolean
+              x-omitempty: false
+          ClassicAccess:
+            type: array
+            items:
+              type: object
+              properties:
+                Database:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+          Repository:
+            type: array
+            items:
+              type: object
+              properties:
+                Database:
+                  type: object
+                  properties:
+                    url:
+                      type: string
+                    dbid:
+                      type: integer
+                    file:
+                      type: integer
+  Module:
+    type: object
+    properties:
+      AdabasData:
+        type: object
+        properties:
+          location:
+            type: string
+      Admin:
+        type: array
+        items:
+          type: object
+          properties:
+            Installation:
+              type: object
+              properties:
+                location:
+                  type: string
+      Directories:
+        type: array
+        items:
+          type: object
+          properties:
+            Directory:
+              type: object
+              properties:
+                location:
+                  type: string
+                name:
+                  type: string
+  Installation:
+    type: array
+    items:
+      type: object
+      properties:
+        Environment:
+          type: object
+          properties:
+            Location:
+              type: string
+            StructureLevel:
+              type: integer
+            Version:
+              type: string
   Users:
     type: object
     properties:
@@ -3686,6 +4077,9 @@ definitions:
     properties:
       token:
         type: string
+      AdminRole:
+        type: boolean
+        x-omitempty: false
   principal:
     type: object 
     properties: 
@@ -3709,28 +4103,40 @@ definitions:
         properties:
           BPHitRate:
             type: number
+            x-omitempty: false
           BufferPoolIO:
             type: integer
+            x-omitempty: false
           FPHitRate:
             type: integer
+            x-omitempty: false
           PlogWrites:
             type: integer
+            x-omitempty: false
           ThbDWPOverflow:
             type: integer
+            x-omitempty: false
           ThbEtSync:
             type: integer
+            x-omitempty: false
           ThbWaitIsn:
             type: integer
+            x-omitempty: false
           ThbWaitUQContext:
             type: integer
+            x-omitempty: false
           WPSpaceWaitCurrent:
             type: integer
+            x-omitempty: false
           WorkReads:
             type: integer
+            x-omitempty: false
           WorkWrites:
             type: integer
+            x-omitempty: false
           WpSpaceWaitTotal:
             type: integer
+            x-omitempty: false
   AdabasEnvironment:
     type: object
     properties:
@@ -4048,6 +4454,7 @@ definitions:
     properties:
       Active:
         type: boolean
+        x-omitempty: false
       Dbid:
         type: integer
       Name:
@@ -4124,6 +4531,7 @@ definitions:
         format: date-time
       ExitCode:
         type: number
+        x-omitempty: false
       Id:
         type: integer
       Log:
@@ -4677,6 +5085,7 @@ definitions:
             format: date-time
           ExitCode:
             type: number
+            x-omitempty: false
           Id:
             type: number
           Log:
@@ -4953,25 +5362,25 @@ definitions:
           RPL_TOTAL:
             type: integer
             x-isnullable: false
-          SSLPORT:
+          SSL_PORT:
             type: integer
             x-isnullable: false
-          SSLCERTFILE:
+          SSL_CERTFILE:
             type: string
             x-isnullable: false
-          SSLKEYFILE:
+          SSL_KEYFILE:
             type: string
             x-isnullable: false
-          SSLVERIFY:
-            type: boolean
+          SSL_VERIFY:
+            type: integer
             x-isnullable: false
-          SSLCAFILE:
+          SSL_CAFILE:
             type: string
             x-isnullable: false
-          SSLCADIRECTORY:
+          SSL_CADIRECTORY:
             type: string
             x-isnullable: false
-          SSLPASSWORD:
+          SSL_PASSWORD:
             type: string
             x-isnullable: false
           TNAA:
@@ -5046,8 +5455,10 @@ definitions:
         type: string
       FileRecords:
         type: integer
+        x-omitempty: false
       NrRecords:
         type: integer
+        x-omitempty: false
       FieldNames:
         type: array
         items:
@@ -5154,7 +5565,10 @@ definitions:
       ucbFiles:
         type: array
         items:
-          type: integer
+          type: object
+          properties:
+            UcbFile: 
+              type: integer
   UserInformation:
     type: object
     properties:
@@ -5255,6 +5669,27 @@ definitions:
         type: integer
       RABNunused:
         type: integer
+  Fields:
+    type: array
+    items:
+      $ref: '#/definitions/FieldItem'
+  FieldItem:
+    type: object
+    properties:
+       level:
+        type: integer
+       value:
+        type: string
+       format:
+        type: string
+       length:
+        type: integer
+       options:
+        type: string
+       identifier:
+        type: string
+       label:
+        type: string
 parameters:
   mapParam:
     type: string
@@ -5322,6 +5757,11 @@ parameters:
     type: boolean
     description: Read a descriptor read with the given field entry
     name: descriptor
+    in: query
+  exchangeParam:
+    type: boolean
+    description: Exchange current imput data with record
+    name: exchange
     in: query
   locationParam:
     type: string

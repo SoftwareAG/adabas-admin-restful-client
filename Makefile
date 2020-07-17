@@ -39,6 +39,8 @@ include $(CURDIR)/make/common.mk
 
 generatemodels: $(SWAGGER_SPEC) $(CURDIR)/models
 
+execs: $(EXECS)
+
 $(CURDIR)/models: $(GOSWAGGER) $(SWAGGER_SPEC) 
 	if [ ! -d $(CURDIR)/models ]; then \
 		GOPATH=$(CURDIR) $(GOSWAGGER) generate client -A AdabasAdmin -f $(SWAGGER_SPEC) -t $(CURDIR) -r copyright; \
