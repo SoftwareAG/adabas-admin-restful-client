@@ -16,8 +16,8 @@
 #   limitations under the License.
 #
 
-PKGS        = $(or $(PKG),$(shell cd $(CURDIR) && env GOPATH=$(GOPATH) $(GO) list ./... | grep -v "^vendor/"))
-TESTPKGS    = $(shell env GOPATH=$(GOPATH) $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
+PKGS        = $(or $(PKG),$(shell cd $(CURDIR) && env $(GO) list ./... | grep -v "^vendor/"))
+TESTPKGS    = $(shell env $(GO) list -f '{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' $(PKGS))
 GO_FLAGS    = $(if $(debug),"-x",)
 GO      = go
 GODOC   = godoc
@@ -35,7 +35,7 @@ execs: $(EXECS)
 
 lib: $(LIBS) $(CEXEC)
 
-prepare: $(LOGPATH) $(CURLOGPATH) $(BIN)
+prepare: $(LOGPATH) $(CURLOGPATH) $(BIN) $(BINTOOLS)
 	@echo "Build architecture ${GOARCH} ${GOOS} network=${WCPHOST} GOFLAGS=$(GO_FLAGS)"
 
 $(LIBS): ; $(info $(M) building libraries…) @ ## Build program binary
@@ -66,9 +66,18 @@ $(BIN)/%: $(BIN) $(OBJECTS) ; $(info $(M) building $(REPOSITORY)…)
 		# (GOPATH=$$tmp go clean -modcache ./...); \
 		rm -rf $$tmp ; exit $$ret
 
+$(BINTOOLS):
+	@mkdir -p $@
+$(BINTOOLS)/%: ; $(info $(M) building tool $(BINTOOLS) on $(REPOSITORY)…)
+	$Q tmp=$$(mktemp -d); \
+		(GOPATH=$$tmp CGO_CFLAGS= CGO_LDFLAGS= \
+		go get $(REPOSITORY) && find $$tmp/bin -type f -exec cp {} $(BINTOOLS)/. \;) || ret=$$?; \
+		(GOPATH=$$tmp go clean -modcache ./...); \
+		rm -rf $$tmp ; exit $$ret
+
 # Tools
-GOSWAGGER = $(BIN)/swagger
-$(BIN)/swagger: REPOSITORY=github.com/go-swagger/go-swagger/cmd/swagger
+GOSWAGGER = $(BINTOOLS)/swagger
+$(BINTOOLS)/swagger: REPOSITORY=github.com/go-swagger/go-swagger/cmd/swagger
 
 GOLINT = $(BIN)/golint
 $(BIN)/golint: REPOSITORY=golang.org/x/lint/golint

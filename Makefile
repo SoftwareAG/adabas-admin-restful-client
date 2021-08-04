@@ -25,6 +25,7 @@ DATE       ?= $(shell date +%FT%T%z)
 VERSION    ?= $(shell git describe --tags --always --dirty --match=v* 2> /dev/null || \
 			cat $(CURDIR)/.version 2> /dev/null || echo v0)
 BIN         = $(CURDIR)/bin/$(GOOS)_$(GOARCH)
+BINTOOLS    = $(CURDIR)/bin/tools/$(GOOS)_$(GOARCH)
 LOGPATH     = $(CURDIR)/logs
 CURLOGPATH  = $(CURDIR)/logs
 NETWORK    ?= emon:30011
@@ -43,7 +44,7 @@ execs: $(EXECS)
 
 $(CURDIR)/models: $(GOSWAGGER) $(SWAGGER_SPEC) 
 	if [ ! -d $(CURDIR)/models ]; then \
-		GOPATH=$(CURDIR) $(GOSWAGGER) generate client -A AdabasAdmin -f $(SWAGGER_SPEC) -t $(CURDIR) -r copyright; \
+		$(GOSWAGGER) generate client -A AdabasAdmin -f $(SWAGGER_SPEC) -t $(CURDIR) -r copyright; \
 	fi
 
 .PHONY: clean
